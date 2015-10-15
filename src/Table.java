@@ -48,40 +48,40 @@ public class Table {
         records.remove(number);
     }
 
-    ArrayList<HashMap<String,String>> returnOnCodition(String firstValue, String secondValue, String opration){
+    ArrayList<HashMap<String,String>> returnOnCodition(String column, String value, String opration){
         ArrayList<HashMap<String,String>> data = new ArrayList<HashMap<String,String>>();
-        if(opration == "="){
+        if(opration .equals("=") ){
             for (int i = 0; i < records.size(); i++) {
-                if(records.get(i).returnValues().get(firstValue) == records.get(i).returnValues().get(secondValue)) {
+                if(records.get(i).returnValues().get(column).equals(value) ) {
                     data.add(records.get(i).returnValues());
                 }
             }
         }
         //TODO: we should check if the inputs are string or not for example "ali"<"reza"
-        if (opration == "<"){
+        if (opration .equals("<")){
             for (int i = 0; i < records.size(); i++) {
-                if(Integer.parseInt(records.get(i).returnValues().get(firstValue)) < Integer.parseInt(records.get(i).returnValues().get(secondValue))) {
+                if(Integer.parseInt(records.get(i).returnValues().get(column)) < Integer.parseInt(value)) {
                     data.add(records.get(i).returnValues());
                 }
             }
         }
-        if(opration == ">"){
+        if(opration .equals(">")){
             for (int i = 0; i < records.size(); i++) {
-                if(Integer.parseInt(records.get(i).returnValues().get(firstValue)) > Integer.parseInt(records.get(i).returnValues().get(secondValue))) {
+                if(Integer.parseInt(records.get(i).returnValues().get(column)) > Integer.parseInt(value)) {
                     data.add(records.get(i).returnValues());
                 }
             }
         }
-        if (opration == "<="){
+        if (opration .equals("<=")){
             for (int i = 0; i < records.size(); i++) {
-                if(Integer.parseInt(records.get(i).returnValues().get(firstValue)) <= Integer.parseInt(records.get(i).returnValues().get(secondValue))) {
+                if(Integer.parseInt(records.get(i).returnValues().get(column)) <= Integer.parseInt(value)) {
                     data.add(records.get(i).returnValues());
                 }
             }
         }
-        if (opration == ">="){
+        if (opration .equals(">=")){
             for (int i = 0; i < records.size(); i++) {
-                if(Integer.parseInt(records.get(i).returnValues().get(firstValue)) >= Integer.parseInt(records.get(i).returnValues().get(secondValue))) {
+                if(Integer.parseInt(records.get(i).returnValues().get(column)) >= Integer.parseInt(value)) {
                     data.add(records.get(i).returnValues());
                 }
             }
@@ -107,9 +107,10 @@ public class Table {
         record.add("hamid");
         record.add("miri");
         t1.addRecord(record);
-        System.out.println(t1.getTableData().get(0).get("first name"));
+        System.out.println(t1.returnOnCodition("first name", "alireza", "="));
+        System.out.println(t1.returnOnCodition("last name","miri","="));
+        System.out.println(t1.returnOnCodition("id","0",">"));
         t1.deleteRecord(1);
         System.out.println(t1.getTableData());
-        System.out.println("123".compareTo("2"));
     }
 }
