@@ -47,6 +47,50 @@ public class Table {
     public void deleteRecord(int number){
         records.remove(number);
     }
+
+    ArrayList<HashMap<String,String>> returnOnCodition(String firstValue, String secondValue, String opration){
+        ArrayList<HashMap<String,String>> data = new ArrayList<HashMap<String,String>>();
+        if(opration == "="){
+            for (int i = 0; i < records.size(); i++) {
+                if(records.get(i).returnValues().get(firstValue) == records.get(i).returnValues().get(secondValue)) {
+                    data.add(records.get(i).returnValues());
+                }
+            }
+        }
+        //TODO: we should check if the inputs are string or not for example "ali"<"reza"
+        if (opration == "<"){
+            for (int i = 0; i < records.size(); i++) {
+                if(Integer.parseInt(records.get(i).returnValues().get(firstValue)) < Integer.parseInt(records.get(i).returnValues().get(secondValue))) {
+                    data.add(records.get(i).returnValues());
+                }
+            }
+        }
+        if(opration == ">"){
+            for (int i = 0; i < records.size(); i++) {
+                if(Integer.parseInt(records.get(i).returnValues().get(firstValue)) > Integer.parseInt(records.get(i).returnValues().get(secondValue))) {
+                    data.add(records.get(i).returnValues());
+                }
+            }
+        }
+        if (opration == "<="){
+            for (int i = 0; i < records.size(); i++) {
+                if(Integer.parseInt(records.get(i).returnValues().get(firstValue)) <= Integer.parseInt(records.get(i).returnValues().get(secondValue))) {
+                    data.add(records.get(i).returnValues());
+                }
+            }
+        }
+        if (opration == ">="){
+            for (int i = 0; i < records.size(); i++) {
+                if(Integer.parseInt(records.get(i).returnValues().get(firstValue)) >= Integer.parseInt(records.get(i).returnValues().get(secondValue))) {
+                    data.add(records.get(i).returnValues());
+                }
+            }
+        }
+        return data;
+    }
+
+
+
     public static void main(String[] args) {
         ArrayList<String >vals = new ArrayList<String>();
         vals.add("id");
@@ -63,8 +107,9 @@ public class Table {
         record.add("hamid");
         record.add("miri");
         t1.addRecord(record);
-        System.out.println(t1.getTableData());
+        System.out.println(t1.getTableData().get(0).get("first name"));
         t1.deleteRecord(1);
         System.out.println(t1.getTableData());
+        System.out.println("123".compareTo("2"));
     }
 }
