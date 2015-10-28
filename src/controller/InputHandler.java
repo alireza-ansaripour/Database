@@ -267,47 +267,47 @@ public class InputHandler {
 	
 	
 	
-	public static String calculatedValue(String calculatingValue){
-		
-		String copy=calculatingValue;
-		Stack<String> stack=new Stack<>();
-		ArrayList<String> list=new ArrayList<>();
-		
-		String operator;
-		for(;copy.length()>0;){
-			
-			int index=min(new int[]{copy.indexOf("+"), copy.indexOf("-"), copy.indexOf("*"), copy.indexOf("/")});
-			list.add(copy.substring(0, index));
-			
-			operator=copy.substring(index, index+1);
-			for(;;){
-				String temp;
-				try{
-					temp=stack.pop();
-				}
-				catch(EmptyStackException exception){
-					stack.push(operator);
-					break;
-				}
-				
-				firstOperatorPriority(temp, operator);
-				
-				
-				
-			}
-			
-			
-			
-			copy=copy.substring(0, index+1);
-			
-			
-			
-		}
-		
-		
-		
-		
-	}
+//	public static String calculatedValue(String calculatingValue){
+//
+//		String copy=calculatingValue;
+//		Stack<String> stack=new Stack<String>();
+//		ArrayList<String> list=new ArrayList<String>();
+//
+//		String operator;
+//		for(;copy.length()>0;){
+//
+//			int index=min(new int[]{copy.indexOf("+"), copy.indexOf("-"), copy.indexOf("*"), copy.indexOf("/")});
+//			list.add(copy.substring(0, index));
+//
+//			operator=copy.substring(index, index+1);
+//			for(;;){
+//				String temp;
+//				try{
+//					temp=stack.pop();
+//				}
+//				catch(EmptyStackException exception){
+//					stack.push(operator);
+//					break;
+//				}
+//
+//				firstOperatorPriority(temp, operator);
+//
+//
+//
+//			}
+//
+//
+//
+//			copy=copy.substring(0, index+1);
+//
+//
+//
+//		}
+//
+//
+//
+//	    return copy;
+//	}
 	
 	
 	

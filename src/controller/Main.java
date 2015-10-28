@@ -19,8 +19,20 @@ public class Main {
 	 * main.
 	 */
 	public static void main(String[] args) {
-		Scanner scanner=new Scanner(System.in);
-		
+        Scanner scanner=new Scanner(System.in);
+        boolean start = false;
+        long t1 = 0;
+        for (int i = 0; i < 1000; i++) {
+            scanner.nextLine();
+            if (!start){
+                t1 = System.currentTimeMillis();
+                start = true;
+            }
+        }
+        
+        long t2 = System.currentTimeMillis();
+        System.out.println(t2-t1);
+
 //		String line=scanner.nextLine();
 //		String[] parameters=InputHandler.handleCommand(line);
 //		System.out.println(parameters[0]);
