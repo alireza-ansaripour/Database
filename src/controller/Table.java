@@ -1,39 +1,56 @@
-package controller;
-
-import controller.ClauseNode;
-import controller.InputHandler;
-
-import java.util.*;
-
 /**
  * Created by alireza on 15/10/15.
  */
+package controller;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+import java.util.*;
 public class Table {
     private String[] columns;
-    private String name;
+    private static HashMap<String,Table> tableHashMap = new HashMap<String, Table>();
     private TreeMap<String, ArrayList<Record>> indexes = new TreeMap<String, ArrayList<Record>>();
-    private String index = "";
+    private String index = "",indexName = "";
     private Record head= null, root= null;
-    public Table(String name,String[] columns) {
+    private ScriptEngine engine ;
+
+    /**
+     * Adds the given table to the tableHashmap
+     * @param name : the name of the table
+     * @param table : the Table object
+     */
+    public static void addTable(String name,Table table){
+        tableHashMap.put(name,table);
+    }
+
+    /**
+     * returns the table with the given name
+     * @param name : the name of the table
+     * @return the table object
+     */
+    public static Table getTable(String name){
+        return tableHashMap.get(name);
+    }
+    public Table(String[] columns, ScriptEngine engine) {
         // the name of the table and all of the columns must be given
         this.columns = columns;
-        this.name = name;
+        this.engine = engine;
     }
     /**
      * create index for table
-     * @param index : index of selected record
+     * @param index : the name of the column in which table is indexed
      */
-    public void addIndex(String index){
+    public void addIndex(String indexName ,String index){
         this.index = index;
+        this.indexName = indexName;
         Record record = root;
         // puts all the records in a tree
         while (record != null){
-            String indexValue = record.returnValues().get(index);
-            if(indexes.get(indexValue) == null){
+            String indexValue = record.returnValues().get(index).trim();
+            if(indexes.get(indexValue) == null){ // if there is no record with this index the it creates a new array:ist and adds the record there
                 ArrayList<Record>records = new ArrayList<Record>();
                 records.add(record);
                 indexes.put(indexValue,records );
-            }else {
+            }else { // gets the arrayList and adds the record to arrayList
                  ArrayList<Record> i = indexes.get(indexValue);
                 i.add(record);
             }
@@ -43,13 +60,13 @@ public class Table {
 
     /**
      * adds new record to the table records
-     * @param values
+     * @param values : values of the new record
      */
     public void addRecord(String[] values){
         // creates a new record and places all the values given from user to record
         Record record = new Record();
         for (int i = 0; i < values.length; i++) {
-            record.addValues(columns[i], values[i]);
+            record.addValues(columns[i], values[i].trim());
         }
         if (head == null){
             head = record;
@@ -74,25 +91,22 @@ public class Table {
         record.setBefore(head);
         head = record; // update the head
     }
-
+    private boolean parseCondition(String condition, Record record) throws ScriptException {
+        return true;
+    }
     /**
-     * returns all records
-     * @return
+     *
+     * @param condition : the condition string from query
+     * @return : all matching records
+     * @throws Exception : condition is wrong
      */
-    public ArrayList<HashMap<String,String>> getRecords(String condition) throws Exception {
-        ArrayList<HashMap<String,String>> data = new ArrayList<HashMap<String,String>>();
+    public ArrayList<Record> getRecords(String condition) throws Exception {
+        ArrayList<Record> data = new ArrayList<Record>();
         Record record = root;
         while (record != null){
-            // Hamids logic
-            String[] values = new String[columns.length];
-            HashMap<String, Integer> column=new HashMap<String, Integer>();
-            for (int j = 0; j < columns.length; j++) {
-                column.put(columns[j], j);
-                values[j] = record.returnValues().get(columns[j]);
-            }
-            ClauseNode root= InputHandler.createClauseTree(condition);
-            if (root.checkCondition(column, values)) { // if the record satisfies the condition
-                data.add(record.returnValues());
+            boolean result = parseCondition(condition,record);
+            if (result) { // if the record satisfies the condition
+                data.add(record);
             }
             record = record.getNext();
         }
@@ -101,7 +115,7 @@ public class Table {
 
     /**
      * deletes on condition
-     * @param condition
+     * @param condition :  the condition string from query
      */
     public void deleteRecords(String condition) throws Exception {
         Record record = root;
@@ -114,9 +128,10 @@ public class Table {
             }
             ClauseNode r= InputHandler.createClauseTree(condition);
             if (r.checkCondition(column, values)) { // the data should be deleted
-
-                ArrayList<Record> records = indexes.get(record.returnValues().get(index)); // gets the arrayList which the data is in it
-                records.remove(record); // removes it form arrayList
+                if(!index.equals("")){
+                    ArrayList<Record> records = indexes.get(record.returnValues().get(index)); // gets the arrayList which the data is in it
+                    records.remove(record); // removes it form arrayList
+                }
 
                 // removes it from linkList
                 Record before = record.getBefore();
@@ -139,34 +154,45 @@ public class Table {
         }
 
     }
+
+    /**
+     *
+     * @param condition :  the condition string from query
+     * @return : returns records which are equal to index
+     */
     public ArrayList<Record> returnOnIndex(String condition){
-        return indexes.get(condition);
+        if (indexes.get(condition.trim())!= null)
+            return indexes.get(condition.trim());
+        else
+            return new ArrayList<Record>();
     }
 
-    public static void main(String[] args) {
-        String[] c = {"fname","lname","year","age"};
-        Table t = new Table("ali",c);
-        t.addIndex("year");
-        String[] j = {"ali","ansari","1392","he"};
-        t.addRecord(j);
-        j = new String[]{"alireza","ansaripour","1392","it"};
-        t.addRecord(j);
-        j = new String[]{"hamid","miri","1392","se"};
-        t.addRecord(j);
-        j = new String[]{"ali","rezaie","1394","se"};
-        t.addRecord(j);
-        j = new String[]{"Ahmad","Ahmadi","1393","se"};
-        t.addRecord(j);
-        try {
-//            t.deleteRecords("fname = ali");
-//            ArrayList<Record> records = t.returnOnIndex("1392");
-//
-//            System.out.println(records);
-            System.out.println("result: " + t.getRecords("year = 1395 AND fname = ali OR TRUE"));
-
-
-        }catch (Exception e){
-            System.out.println("error: "+e.getMessage());
-        }
+    /**
+     *
+     * @param condition : the condition string from query
+     * @return : returns records which are higher than index
+     */
+    public ArrayList<Record> returnOnIndexHigher(String condition){
+        ArrayList<Record> records = new ArrayList<Record>();
+        if (indexes.get(condition.trim()) == null)
+            return records;
+        TreeMap<String,Record> treeMap = (TreeMap<String, Record>) indexes.higherEntry(condition.trim());
+        System.out.println(treeMap.entrySet());
+        return records;
     }
+    /**
+     *
+     * @param condition : the condition string from query
+     * @return : returns records which are lower than index
+     */
+    public ArrayList<Record> returnOnIndexLower(String condition){
+        if (indexes.lowerKey(condition.trim())!= null)
+            return indexes.get(condition.trim());
+        else
+            return new ArrayList<Record>();
+    }
+    public String getIndex(){
+        return indexName;
+    }
+
 }
