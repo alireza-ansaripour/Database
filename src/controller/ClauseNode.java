@@ -2,85 +2,132 @@ package controller;
 
 import java.util.HashMap;
 
+
 public class ClauseNode {
 	
 	
 	private boolean isLeaf;
 	
-	private int operator;//0:AND, 1:OR.	this Node can not be leaf.
+	public int operator;//0:AND, 1:OR.	this Node can not be leaf.
 	private ClauseNode leftNode;
 	private ClauseNode rightNode;
 	
 	private int singleOperator;//4:> ,3:>= ,2:= ,1:<= ,1:< .this Node must be leaf.
 	private String variableName;//if this Node is a leaf must has an operator.
 	private String variableValue;//if this Node is a leaf its variable must has a value. 
-	private boolean not;//if this Node is a leaf can has a not operator.if true its operator is != else =. 
+	public boolean not = false;//if this Node is a leaf can has a not operator.if true its operator is != else =. 
 	
 	private boolean isConst;
 	private boolean constant;
 	
-	/*
-	 * constructor if this Node is not leaf this constructor must be called.
-	 * operation:		can be 0:AND and 1:OR.
-	 * leftNode:		if this node has operator must has left child.
-	 * rightNode:		if this node has operator must has right child.
+	private boolean isFull;//if this node has two children or this node is leaf this variable is true.
+	
+	
+	/**
+	 * constructor.
+	 * @param	operator	0:AND, 1:OR.
 	 */
-	public ClauseNode(int operator,ClauseNode leftNode,ClauseNode rightNode){
-		
+	public ClauseNode(int operator){
 		this.isLeaf=false;
 		this.isConst=false;
+		this.isFull=false;
 		this.operator=operator;
-		this.leftNode=leftNode;
+	}
+	
+	
+	/**
+	 * constructor.
+	 * called when condition is a leaf.(does not contain AND or OR)
+	 * @param	condition	if condition does not contains AND or OR or NOT then we can send it to this constructor.
+	 */
+	public ClauseNode(String condition){
+		
+		this.isLeaf=true;
+		this.isFull=true;
+		
+		
+		if(condition.equals("TRUE")){
+			this.isConst=true;
+			this.constant=true;
+		}
+		else if(condition.equals("FALSE")){
+			this.isConst=true;
+			this.constant=false;
+		}
+		else{
+			
+			this.isConst=false;
+			
+			int operator;
+			String temp;
+			if(condition.contains(">")==true){
+				operator=4;
+				temp=">";
+			}
+			else if(condition.contains(">=")==true){
+				operator=3;
+				temp=">=";
+			}
+			else if(condition.contains("=")==true){
+				operator=2;
+				temp="=";
+			}
+			else if(condition.contains("<=")==true){
+				operator=1;
+				temp="<=";
+			}
+			//condition.contains("<")==true
+			else{
+				operator=0;
+				temp="<";
+			}
+			
+			
+			String[] result=condition.split(temp);
+			
+			
+			this.singleOperator=operator;
+			this.variableName=result[0];
+			this.variableValue=result[1];
+		}
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	/**
+	 * gets two ClauseNode and set them to this object. used for ClauseNode that has a compare operator.
+	 * @param	rightNode	one of the ClauseNode objects.
+	 * @param	leftNode	one of the ClauseNode objects.
+	 * 
+	 */
+	public void addChild(ClauseNode rightNode,ClauseNode leftNode){
 		this.rightNode=rightNode;
-		
-	}
-	
-	
-	
-	/*
-	 * constructor if this Node is a leaf this constructor must be called.
-	 * variableName:	name of column that we want to check its value.
-	 * variableValue:	value of that variable that must be check.
-	 * not:				if is true in checking returns opposite of result if is false returns result.
-	 */
-	public ClauseNode(int singleOperator,String variableName,String variableValue,boolean not){
-		
-		this.isLeaf=true;
-		this.isConst=false;
-		this.singleOperator=singleOperator;
-		this.variableName=variableName;
-		this.variableValue=variableValue;
-		this.not=not;
-		
-	}
-	
-	
-	/*
-	 * constructor. if this Node is a leaf and is a constant TRUE or FALSE.
-	 * constant:	if true value of this Node is true and if is false value of this Node is false in checking.
-	 */
-	public ClauseNode(boolean constant,boolean not){
-		
-		this.isLeaf=true;
-		this.isConst=true;
-		this.constant=constant;
-		this.not=not;
-		
+		this.leftNode=leftNode;
+		this.isFull=true;
 	}
 	
 	
 	
 	
-	/*
+	
+	
+	
+	
+	/**
 	 * checks condition of this Node(if this Node is leaf) or its subtree(if this Node is not leaf) 
 	 * then returns result.
-	 * 
-	 * columnsName:		a HashMap<column name, index of this column in table> to get variable with its name
-	 * 					and get its column index then get its value in values array.
-	 * values:			row of a table that is values of a record.
+	 * @param	columnsName		a HashMap<column name, index of this column in table> to get variable with its name
+	 * 							and get its column index then get its value in values array.
+	 * @param	values		row of a table that is values of a record.
 	 * 
 	 */
 	public boolean checkCondition(HashMap<String,Integer> columnNames,String[] values)throws Exception,NoVariable{
+		
 		
 		if(this.isLeaf==true){
 			
@@ -99,10 +146,14 @@ public class ClauseNode {
 				throw new NoVariable();
 			}
 			
+			
+			
 			String value=values[index.intValue()];
+			
 			
 			if(value!=null){
 				boolean result;
+				
 				
 //				single operator is >
 				if(this.singleOperator==4){
@@ -125,6 +176,9 @@ public class ClauseNode {
 					result=Integer.parseInt(value)<Integer.parseInt(this.variableValue);
 				}
 				
+				
+				
+				
 				if(this.not==true){
 					return !(result);
 				}
@@ -137,7 +191,6 @@ public class ClauseNode {
 			else{
 				return false;
 			}
-			
 			
 		}
 		//this.isLeaf==false.
@@ -159,7 +212,12 @@ public class ClauseNode {
 				
 				//in AND if one of operands is false result become false.
 				if(leftResult==false){
-					return false;
+					if(this.not==true){
+						return true;
+					}
+					else{
+						return false;
+					}
 				}
 				//leftResult == true
 				else{
@@ -171,7 +229,12 @@ public class ClauseNode {
 					}
 				}
 				
-				return leftResult && rightResult;
+				if(this.not==false){
+					return leftResult && rightResult;
+				}
+				else{
+					return !(leftResult&&rightResult);
+				}
 				
 			}
 			//this.operator is OR.
@@ -186,12 +249,22 @@ public class ClauseNode {
 				
 				//in OR if one of operands is true result become true.
 				if(leftResult==true){
-					return true;
+					if(this.not==true){
+						return false;
+					}
+					else{
+						return true;
+					}
 				}
 				//leftResult==false
 				else{
 					if(this.rightNode!=null){
-						return this.rightNode.checkCondition(columnNames, values);
+						if(this.not==true){
+							return !this.rightNode.checkCondition(columnNames, values);
+						}
+						else{
+							return this.rightNode.checkCondition(columnNames, values);
+						}
 					}
 					else{
 						throw new Exception();
@@ -207,6 +280,87 @@ public class ClauseNode {
 		
 	}
 	
+	
+	
+	
+		
+	
+	/**
+	 * before a condition is there is a NOT this function reverse its sign.
+	 */
+	public void inverseSign(){
+		if(not==true){
+			not=false;
+		}
+		else{
+			not=true;
+		}
+	}
+	
+	
+	
+	/**
+	 * @return	if this node is leaf or if has binary operator and has two children returns true else returns false.
+	 */
+	public boolean isFull(){
+		return this.isFull;
+	}
+	
+	
+	
+	@Override
+	public String toString(){
+		
+		String result="";
+		if(this.isLeaf==true){
+			if(this.isConst==true){
+				result=this.constant+"";
+			}
+			else{
+				String temp;
+//				">"
+				if(this.singleOperator==4){
+					temp=">";
+				}
+//				">="
+				else if(this.singleOperator==3){
+					temp=">=";
+				}
+//				"="
+				else if(this.singleOperator==2){
+					temp="=";
+				}
+//				"<="
+				else if(this.singleOperator==1){
+					temp="<=";
+				}
+//				"<"
+				else{
+					temp="<";
+				}
+				result=this.variableName+" "+temp+" "+this.variableValue;
+			}
+		}
+//		binary operators
+		else{
+			String temp;
+			
+			if(this.not==true){
+				result+="NOT ";
+			}
+			
+			if(this.operator==0){
+				temp="AND";
+			}
+			else{
+				temp="OR";
+			}
+			result+=this.leftNode.toString()+" "+temp+" "+this.rightNode.toString();
+		}
+		
+		return result;
+		
+	}
 	
 	
 	
