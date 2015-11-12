@@ -4,8 +4,6 @@ package controller;
 import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.Stack;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 
 /**
@@ -15,6 +13,8 @@ import java.util.regex.Matcher;
 
 public class InputHandler {
 	
+	
+	private static String quoteSpace="#";
 	
 	
 	/**
@@ -123,6 +123,7 @@ public class InputHandler {
 		
 		String copy=postfixCondition.replace(" 0 ", " ");
 		
+		copy=removeSpaces(postfixCondition, new String[]{"+","-","*","/"});
 		
 		String[] array=copy.split(" ");
 		
@@ -132,15 +133,19 @@ public class InputHandler {
 		
 		array=fixOps(array);
 		
+		for(int i=0;i<array.length;i++){
+			array[i]=array[i].replace(quoteSpace, " ");
+		}
+		
+		
+		
 //		for(int i=0;i<array.length;i++){
 //			System.out.println("111: "+array[i]);
 //		}
 		
-		Stack<ClauseNode> tempStack=new Stack<>();
 		Stack<ClauseNode> stack=new Stack<>();
 		
 		ClauseNode temp;
-		int sign=0;
 		for(int i=0;i<array.length;i++){
 			
 			if(array[i].length()==0){
@@ -153,43 +158,96 @@ public class InputHandler {
 				stack.push(temp);
 			}
 			else{
-				stack.push(convertToClauseNode(array[i]));
-			}
-		}
-		
-		
-		
-		boolean oneLastLeaf=false;
-		for(;stack.size()>1||tempStack.size()>0;){
-			
-			temp=stack.pop();
-			if(oneLastLeaf==true){
+				temp=convertToClauseNode(array[i]);
 				if(temp.isFull()==true){
-					ClauseNode child=tempStack.pop();
-					ClauseNode parent;
-					try{
-						parent=tempStack.pop();
-					}
-					catch(EmptyStackException exception){
-						break;
-					}
-					parent.addChild(child, temp);
-					stack.push(parent);
+					stack.push(temp);
 				}
 				else{
-					tempStack.push(temp);
-					oneLastLeaf=false;
+					ClauseNode c1=stack.pop();
+					ClauseNode c2=stack.pop();
+					temp.addChild(c1, c2);
+					stack.push(temp);
 				}
-			}
-			else{
-				oneLastLeaf=temp.isFull();
-				tempStack.push(temp);
 			}
 		}
 		
 		return stack.pop();
 		
+		
 	}
+	
+	
+	
+	
+	
+	
+	/**
+	 * gets a str and array of operators then remove all free spaces around operators and replace all free space
+	 * in double quote with #. 
+	 * @param str computed_value.
+	 * @param operators array of operators in computed_value.
+	 * @return fixed str.
+	 */
+	public static String removeSpaces(String str,String[] operators){
+		String result="";
+		String copy=str;
+		boolean qoute=false;
+		for(int i=0;i<copy.length();i++){
+			if(copy.charAt(i)=='\"'){
+				if(qoute==false){
+					qoute=true;
+				}
+				else{
+					qoute=false;
+				}
+			}
+			
+			if(copy.charAt(i)==' '){
+				if(qoute==true){
+					result=result+quoteSpace;
+					continue;
+				}
+				else{
+					if(isCharAt(str, i-1, operators)==true||isCharAt(str, i+1, operators)==true){
+						continue;
+					}
+					else{
+						result=result+" ";
+					}
+				}
+			}
+			else{
+				result=result+copy.charAt(i);
+			}
+		}
+		
+		return result;
+	}
+	
+	
+	
+	/**
+	 * gets a string and an index then if in that index is an operator returns true else return false.
+	 * @param str compute value.
+	 * @param index checking index.
+	 * @param operators operators to check.
+	 * @return if at str.CharAt(index) is an operator returns true else returns false.
+	 */
+	private static boolean isCharAt(String str,int index,String[] operators){
+		try{
+			for(int i=0;i<operators.length;i++){
+				if(str.charAt(index)==operators[i].charAt(0)){
+					return true;
+				}
+			}
+		}
+		catch(Exception exception){
+			return false;
+		}
+		return false;
+	}
+	
+	
 	
 	
 	

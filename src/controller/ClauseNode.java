@@ -329,6 +329,40 @@ public class ClauseNode {
 	
 	
 	
+	
+	/**
+	 * returns operator of this node.
+	 * @return 4:> , 3:>= , 2:= , 1:<= , 0:<.
+	 * @throws Exception if this node contains AND,OR or is TRUE,FALSE.
+	 */
+	public int getSingleOperator()throws Exception{
+		if(this.isLeaf==true&&this.isConst==false){
+			return this.singleOperator;
+		}
+		else{
+			throw new Exception();
+		}
+	}
+	
+	
+	
+	
+	
+	/**
+	 * @return if this clause does not contains AND,OR and is not TRUE,FALSE returns name of variable in clause.
+	 * @throws Exception if this node is TRUE,FALSE or contains AND,OR.
+	 */
+	public String getVariableName()throws Exception{
+		if(this.isLeaf==true&&this.isConst==false){
+			return this.variableName;
+		}
+		else{
+			throw new Exception();
+		}
+	}
+	
+	
+	
 	@Override
 	public String toString(){
 		
@@ -376,6 +410,7 @@ public class ClauseNode {
 			else{
 				temp="OR";
 			}
+			
 			result+=this.leftNode.toString()+" "+temp+" "+this.rightNode.toString();
 		}
 		

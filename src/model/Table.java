@@ -126,8 +126,6 @@ public class Table {
         record.setBefore(head);
         head = record; // update the head
         
-        
-        
     }
 
     

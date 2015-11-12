@@ -9,6 +9,7 @@ import controller.InvalidParam;
 
 public class SelectCommand extends Command{
 	
+	private String[] selectedVariables;
 	private String[][] actionResult;
 	
 	@Override
@@ -21,7 +22,7 @@ public class SelectCommand extends Command{
 		String[] components=getComponents(command);
 		String tableName=components[0];
 		String condition=components[1];
-		String[] selectedVariables=new String[components.length-2];
+		selectedVariables=new String[components.length-2];
 		
 		for(int i=0;i<selectedVariables.length;i++){
 			selectedVariables[i]=components[i+2];
@@ -64,6 +65,17 @@ public class SelectCommand extends Command{
 	
 	@Override
 	public void print() {
+		
+//		if(actionResult.length==0){
+//			System.out.println("NO RESULT");
+//			return;
+//		}
+		
+		String temp=selectedVariables[0];
+		for(int i=1;i<selectedVariables.length;i++){
+			temp+=","+selectedVariables[i];
+		}
+		System.out.println(temp);
 		for(int i=0;i<actionResult.length;i++){
 			for(int j=0;j<actionResult[0].length;j++){
 				System.out.print(actionResult[i][j]);
