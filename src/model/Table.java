@@ -139,7 +139,6 @@ public class Table {
      */
     public Record[] getRecords(ClauseNode condition){
         
-    	System.out.println("condition: "+condition);
     	
     	ArrayList<Record> result=new ArrayList<>();
         Record record = root;
@@ -157,9 +156,7 @@ public class Table {
 //            ClauseNode root= InputHandler.createClauseTree(condition);
             boolean check=false;
             try{
-            	System.out.println("befor hay check");
             	check=condition.checkCondition(column, values);
-            	System.out.println("hay check");
             }
             catch(Exception exception){
             	check=false;
@@ -223,8 +220,6 @@ public class Table {
     		}
     	}
     	
-    	
-    	
     	return result;
     }
     
@@ -237,8 +232,6 @@ public class Table {
      */
     public void removeRecords(ClauseNode condition){
     	
-    	System.out.println(this.name);
-    	System.out.println(condition);
     	
         Record record = root;
         while (record != null){
@@ -258,7 +251,6 @@ public class Table {
             	check=false;
             }
             
-            System.out.println("check: "+check);
             
             if (check==true) { // the data should be deleted
             	

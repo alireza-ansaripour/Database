@@ -17,146 +17,6 @@ public class InputHandler {
 	
 	
 	
-	public static String[] handleCommand(String command){
-		
-		String[] result;
-		String matchingString;
-		Pattern pattern;
-		Matcher matcher;
-		
-		
-		if(command.startsWith("CREATE TABLE")){
-			matchingString="CREATE TABLE\\s(\\w+)[(](.*)[)]";
-			pattern=Pattern.compile(matchingString);
-			matcher=pattern.matcher(command);
-			if(matcher.find()==true){
-				String[] columns=matcher.group(2).split(",");
-				result=new String[columns.length*2+1];
-				result[0]=matcher.group(1);
-				
-				
-				String temp[];
-				for(int i=0;i<columns.length;i++){
-					temp=columns[i].split(" ");
-					result[2*i+1]=temp[0];
-					result[2*i+2]=temp[1];
-				}
-				
-				return result;
-			}
-			else{
-				System.out.println("CREATE TABLE not found");
-			}
-		}
-		else if(command.startsWith("CREATE INDEX")){
-			matchingString="CREATE INDEX (.+) ON (.+)[(](.+)[)]";
-			pattern=Pattern.compile(matchingString);
-			matcher=pattern.matcher(command);
-			if(matcher.find()==true){
-				result=new String[3];
-				for(int i=0;i<result.length;i++){
-					result[i]=matcher.group(i+1);
-				}
-				
-				return result;
-			}
-			else{
-				System.out.println("CREATE INDEX not found");
-			}
-			
-			
-		}
-		else if(command.startsWith("INSERT")){
-			matchingString="INSERT INTO (.*) VALUES[(](.*)[)]";
-			pattern=Pattern.compile(matchingString);
-			matcher=pattern.matcher(command);
-			
-			if(matcher.find()==true){
-				String[] temp=matcher.group(2).split(",");
-				result=new String[temp.length+1];
-				result[0]=matcher.group(1);
-				for(int i=0;i<temp.length;i++){
-					result[i+1]=temp[i];
-				}
-				
-				return result;
-				
-			}
-			else{
-				System.out.println("INSERT not found");
-			}
-			
-			
-		}
-		else if(command.startsWith("UPDATE")){
-			matchingString="UPDATE (.*) SET (.*)=(.*) WHERE (.*);";
-			pattern=Pattern.compile(matchingString);
-			matcher=pattern.matcher(command);
-			
-			if(matcher.find()==true){
-				result=new String[4];
-				for(int i=0;i<result.length;i++){
-					result[i]=matcher.group(i+1);
-				}
-				return result;
-			}
-			else{
-				System.out.println("UPDATE not found");
-			}
-			
-			
-		}
-		else if(command.startsWith("DELETE")){
-			matchingString="DELETE FROM (.*) WHERE (.*);";
-			pattern=Pattern.compile(matchingString);
-			matcher=pattern.matcher(command);
-			
-			if(matcher.find()==true){
-				result=new String[2];
-				for(int i=0;i<result.length;i++){
-					result[i]=matcher.group(i+1);
-				}
-				
-				return result;
-			}
-			else{
-				System.out.println("DELETE not found");
-			}
-			
-		}
-		else if(command.startsWith("SELECT")){
-			matchingString="SELECT (.*) FROM (.*) WHERE (.*)";
-			pattern=Pattern.compile(matchingString);
-			matcher=pattern.matcher(command);
-			
-			if(matcher.find()==true){
-				String[] temp=matcher.group(1).split(",");
-				result=new String[temp.length+2];
-				result[0]=matcher.group(2);
-				result[1]=matcher.group(3);
-				
-				for(int i=0;i<temp.length;i++){
-					result[i+2]=temp[i];
-				}
-				
-				return result;
-				
-			}
-			else{
-				System.out.println("SELECT not found");
-			}
-			
-		}
-		
-		return null;
-		
-		
-	}
-	
-	
-	
-	
-	
 	/**
 	 * get a string as condition then deletes parentheses and free spaces.
 	 * then creates clause tree and returns its root.
@@ -170,7 +30,6 @@ public class InputHandler {
 		
 		copy=preparingToPostfix(copy);
 		
-		System.out.println("copy: "+copy);
 		
 		InToPost post=new InToPost(copy);
 		copy=post.doTrans();
@@ -261,23 +120,21 @@ public class InputHandler {
 	 * @return root of clause tree.
 	 */
 	private static ClauseNode createTree(String postfixCondition){
-		System.out.println(postfixCondition+"  ****************");
 		
 		String copy=postfixCondition.replace(" 0 ", " ");
 		
-		System.out.println("jijsd: "+copy);
 		
 		String[] array=copy.split(" ");
 		
-		for(int i=0;i<array.length;i++){
-			System.out.println("hay: "+array[i]);
-		}
+//		for(int i=0;i<array.length;i++){
+//			System.out.println("hay: "+array[i]);
+//		}
 		
 		array=fixOps(array);
 		
-		for(int i=0;i<array.length;i++){
-			System.out.println("111: "+array[i]);
-		}
+//		for(int i=0;i<array.length;i++){
+//			System.out.println("111: "+array[i]);
+//		}
 		
 		Stack<ClauseNode> tempStack=new Stack<>();
 		Stack<ClauseNode> stack=new Stack<>();
@@ -293,7 +150,6 @@ public class InputHandler {
 			if(array[i].equals("!")){//!:NOT.
 				temp=stack.pop();
 				temp.inverseSign();
-				System.out.println("not "+temp.not);
 				stack.push(temp);
 			}
 			else{
@@ -380,7 +236,6 @@ public class InputHandler {
 			}
 			else{
 				if(lastOperator==true){
-					System.out.println("lastop");
 					index++;
 					list[index]=array[i];
 					lastOperator=false;
@@ -528,9 +383,9 @@ public class InputHandler {
 			
 		}
 		
-		if(operand1.startsWith("\"")==true){
-			operand1=operand1.substring(1, operand1.length()-1);
-		}
+//		if(operand1.startsWith("\"")==true){
+//			operand1=operand1.substring(1, operand1.length()-1);
+//		}
 		
 		return operand1;
 	}

@@ -13,7 +13,7 @@ public class ClauseNode {
 	private ClauseNode rightNode;
 	
 	private int singleOperator;//4:> ,3:>= ,2:= ,1:<= ,1:< .this Node must be leaf.
-	private String variableName;//if this Node is a leaf must has an operator.
+	private String variableName;//if this Node is a leaf must has an operand.
 	private String variableValue;//if this Node is a leaf its variable must has a value. 
 	public boolean not = false;//if this Node is a leaf can has a not operator.if true its operator is != else =. 
 	
@@ -82,19 +82,37 @@ public class ClauseNode {
 				temp="<";
 			}
 			
-			
 			String[] result=condition.split(temp);
 			
 			
+			
 			this.singleOperator=operator;
-			this.variableName=result[0];
-			this.variableValue=result[1];
+			this.variableName=clearSpace(result[0]);
+			this.variableValue=clearSpace(result[1]);
+			
+			
 		}
 		
 	}
 	
 	
 	
+	/**
+	 * gets a string and remove free space of start and end of it.
+	 * @param str
+	 * @return
+	 */
+	private String clearSpace(String str){
+		int index1=0;
+		int index2=str.length()-1;
+		for(;str.charAt(index1)==' ';index1++){
+			
+		}
+		for(;str.charAt(index2)==' ';index2--){
+			
+		}
+		return str.substring(index1, index2+1);
+	}
 	
 	
 	
@@ -135,7 +153,6 @@ public class ClauseNode {
 				if(this.not==true){
 					return !this.constant;
 				}
-				//this.not == false
 				else{
 					return this.constant;
 				}
@@ -153,29 +170,33 @@ public class ClauseNode {
 			
 			if(value!=null){
 				boolean result;
-				
+				String checkValue=InputHandler.getValue(this.variableValue, columnNames, values);
 				
 //				single operator is >
 				if(this.singleOperator==4){
-					result=Integer.parseInt(value)>Integer.parseInt(this.variableValue);
+//					result=Integer.parseInt(value)>Integer.parseInt(this.variableValue);
+					result=Integer.parseInt(value)>Integer.parseInt(checkValue);
 				}
 //				single operator is >=
 				else if(this.singleOperator==3){
-					result=Integer.parseInt(value)>=Integer.parseInt(this.variableValue);
+//					result=Integer.parseInt(value)>=Integer.parseInt(this.variableValue);
+					result=Integer.parseInt(value)>=Integer.parseInt(checkValue);
 				}
 //				single operator is =
 				else if(this.singleOperator==2){
-					result=this.variableValue.equals(value);
+//					result=this.variableValue.equals(value);
+					result=checkValue.equals(value);
 				}
 //				single operator is <=
 				else if(this.singleOperator==1){
-					result=Integer.parseInt(value)<=Integer.parseInt(this.variableValue);
+//					result=Integer.parseInt(value)<=Integer.parseInt(this.variableValue);
+					result=Integer.parseInt(value)<=Integer.parseInt(checkValue);
 				}
 //				single operator is <. this.singleOperator==0
 				else{
-					result=Integer.parseInt(value)<Integer.parseInt(this.variableValue);
+//					result=Integer.parseInt(value)<Integer.parseInt(this.variableValue);
+					result=Integer.parseInt(value)<Integer.parseInt(checkValue);
 				}
-				
 				
 				
 				
