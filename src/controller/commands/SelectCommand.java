@@ -41,7 +41,7 @@ public class SelectCommand extends Command{
 	 */
 	@Override
 	protected String[] getComponents(String command) throws InvalidParam {
-		matchingString="SELECT (.*) FROM (.*) WHERE (.*)";
+		matchingString="SELECT (.*) FROM (.*) WHERE (.*);";
 		pattern=Pattern.compile(matchingString);
 		matcher=pattern.matcher(command);
 		

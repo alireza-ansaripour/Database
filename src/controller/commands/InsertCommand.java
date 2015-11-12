@@ -37,7 +37,7 @@ public class InsertCommand extends Command {
 	 */
 	@Override
 	protected String[] getComponents(String command) throws InvalidParam {
-		matchingString="INSERT INTO (.*) VALUES[(](.*)[)]";
+		matchingString="INSERT INTO (.*) VALUES\\s*[(](.*)[)];";
 		pattern=Pattern.compile(matchingString);
 		matcher=pattern.matcher(command);
 		

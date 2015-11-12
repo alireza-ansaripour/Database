@@ -40,7 +40,7 @@ public class CreateTableCommand extends Command{
 	 */
 	@Override
 	protected String[] getComponents(String command) throws InvalidParam{
-		matchingString="CREATE TABLE\\s(\\w+)[(](.*)[)]";
+		matchingString="CREATE TABLE\\s(\\w+)[(](.*)[)];";
 		pattern=Pattern.compile(matchingString);
 		matcher=pattern.matcher(command);
 		if(matcher.find()==true){
