@@ -1,6 +1,8 @@
 package model;
 
 import controller.*;
+
+import java.net.Inet4Address;
 import java.util.*;
 
 /**
@@ -12,7 +14,7 @@ public class Table {
 	private String[] columns;
     private String name;
     private TreeMap<String, ArrayList<Record>> indexes = new TreeMap<String, ArrayList<Record>>();
-    private String index = "";
+    private String index = "",indexName="";
     private Record head= null, root= null;
     
     
@@ -36,7 +38,7 @@ public class Table {
      * if there is no column name equals to columnName throws Exception.
      * @param index		name of index column in this table.
      */
-    public void addIndex(String columnName)throws Exception{
+    public void addIndex(String columnName,String indexName)throws Exception{
     	
     	//checking is there a column with this name or not.
     	boolean isColumnName=false;
@@ -51,6 +53,7 @@ public class Table {
     	
     	//setting value of this column to index.
         this.index = columnName;
+        this.indexName = indexName;
         Record record = root;
         // puts all the records in a tree
         while (record != null){
@@ -136,13 +139,24 @@ public class Table {
      * @return an ArrayList of satisfied records. 
      */
     public Record[] getRecords(ClauseNode condition){
-        
-    	
+        String command = condition.toString();
+        String[] parts = command.split(" ");
+        if(parts[0].equals(indexName) && parts[1].equals("=")){
+        	try {
+        		String val_inString = InputHandler.getValue(parts[2], null, null);
+        		ArrayList<Record> result = returnOnIndex(val_inString);
+	           	 if (result == null){
+	           		 result = new ArrayList<Record>();
+	           	 }
+           	 	Record[] res=new Record[result.size()];
+                return result.toArray(res);
+			} catch (Exception e) {
+				System.out.println("INVALID INPUT");
+			}
+        }
     	ArrayList<Record> result=new ArrayList<>();
         Record record = root;
         while (record != null){
-        	
-            
         	String[] values = new String[columns.length];
             HashMap<String, Integer> column=new HashMap<String, Integer>();
             for (int j = 0; j < columns.length; j++) {

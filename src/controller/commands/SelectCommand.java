@@ -66,10 +66,10 @@ public class SelectCommand extends Command{
 	@Override
 	public void print() {
 		
-//		if(actionResult.length==0){
-//			System.out.println("NO RESULT");
-//			return;
-//		}
+		if(actionResult.length==0){
+			System.out.println("NO RESULT");
+			return;
+		}
 		
 		String temp=selectedVariables[0];
 		for(int i=1;i<selectedVariables.length;i++){

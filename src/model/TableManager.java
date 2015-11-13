@@ -45,7 +45,13 @@ public class TableManager {
 	
 	
 	public static void createIndex(String tableName,String indexName,String columnName){
-		//TODO implement.
+		Table t = tables.get(tableName);
+		try {
+			t.addIndex(columnName, indexName);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	
