@@ -60,21 +60,21 @@ public class ClauseNode {
 			
 			int operator;
 			String temp;
-			if(condition.contains(">")==true){
-				operator=4;
-				temp=">";
-			}
-			else if(condition.contains(">=")==true){
+			if(condition.contains(">=")==true){
 				operator=3;
 				temp=">=";
-			}
-			else if(condition.contains("=")==true){
-				operator=2;
-				temp="=";
 			}
 			else if(condition.contains("<=")==true){
 				operator=1;
 				temp="<=";
+			}
+			else if(condition.contains(">")==true){
+				operator=4;
+				temp=">";
+			}
+			else if(condition.contains("=")==true){
+				operator=2;
+				temp="=";
 			}
 			//condition.contains("<")==true
 			else{
@@ -83,7 +83,6 @@ public class ClauseNode {
 			}
 			
 			String[] result=condition.split(temp);
-			
 			
 			
 			this.singleOperator=operator;
@@ -168,9 +167,11 @@ public class ClauseNode {
 			String value=values[index.intValue()];
 			
 			
-			if(value!=null){
+			
+			try{
 				boolean result;
 				String checkValue=InputHandler.getValue(this.variableValue, columnNames, values);
+				
 				
 //				single operator is >
 				if(this.singleOperator==4){
@@ -209,7 +210,7 @@ public class ClauseNode {
 				}
 			}
 			//value==null
-			else{
+			catch(NullPointerException exception){
 				return false;
 			}
 			
