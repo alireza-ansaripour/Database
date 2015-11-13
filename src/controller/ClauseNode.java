@@ -330,36 +330,41 @@ public class ClauseNode {
 	
 	
 	
-	/**
-	 * returns operator of this node.
-	 * @return 4:> , 3:>= , 2:= , 1:<= , 0:<.
-	 * @throws Exception if this node contains AND,OR or is TRUE,FALSE.
-	 */
-	public int getSingleOperator()throws Exception{
-		if(this.isLeaf==true&&this.isConst==false){
-			return this.singleOperator;
-		}
-		else{
-			throw new Exception();
-		}
-	}
-	
-	
-	
 	
 	
 	/**
-	 * @return if this clause does not contains AND,OR and is not TRUE,FALSE returns name of variable in clause.
+	 * @return if this clause does not contains AND,OR and is not TRUE,FALSE
+	 *  returns an array: array[0]:variable name , array[1]:variable value, array[2]:operator.
 	 * @throws Exception if this node is TRUE,FALSE or contains AND,OR.
 	 */
-	public String getVariableName()throws Exception{
+	public String[] getVariable()throws Exception{
 		if(this.isLeaf==true&&this.isConst==false){
-			return this.variableName;
+			String operator;
+			if(this.singleOperator==4){
+				operator=">";
+			}
+			else if(this.singleOperator==3){
+				operator=">=";
+			}
+			else if(this.singleOperator==2){
+				operator="=";
+			}
+			else if(this.singleOperator==1){
+				operator="<=";
+			}
+			else{
+				operator="<";
+			}
+			return new String[]{this.variableName,this.variableValue,operator};
 		}
 		else{
 			throw new Exception();
 		}
 	}
+	
+	
+	
+	
 	
 	
 	
