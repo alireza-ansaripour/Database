@@ -123,7 +123,7 @@ public class InputHandler {
 		
 		String copy=postfixCondition.replace(" 0 ", " ");
 		
-		copy=removeSpaces(postfixCondition, new String[]{"+","-","*","/"});
+		copy=removeSpaces(copy, new String[]{"+","-","*","/"});
 		
 		String[] array=copy.split(" ");
 		
@@ -136,7 +136,6 @@ public class InputHandler {
 		for(int i=0;i<array.length;i++){
 			array[i]=array[i].replace(quoteSpace, " ");
 		}
-		
 		
 		
 //		for(int i=0;i<array.length;i++){
