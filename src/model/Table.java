@@ -2,20 +2,22 @@ package model;
 
 import controller.*;
 
-import java.net.Inet4Address;
 import java.util.*;
-
 /**
  * Created by Alireza on 15/10/15.
  */
 public class Table {
-    
+    private static HashMap<Table, Boolean> onDelete = new HashMap<Table, Boolean>(), onUpdate= new HashMap<Table, Boolean>();
 	private int[] types;//0:INT, 1:VARCHAR.
 	private String[] columns;
     private String name;
-    private TreeMap<String, ArrayList<Record>> indexes = new TreeMap<String, ArrayList<Record>>();
-    private String index = "",indexName="";
-    private Record head= null, root= null;
+    private String primaryKey ="";
+    private int pK;
+    private ArrayList<Table>refrences= new ArrayList<Table>();
+    private ArrayList<String>indexes=new ArrayList<String>();
+    private HashMap<String,TreeMap<String, ArrayList<Record>>>treePair = new HashMap<String, TreeMap<String,ArrayList<Record>>>();
+    private Record root= new Record(),head = root;
+    private HashMap<Table, String>foreignKeys= new HashMap<Table, String>();
     
     
     /**
@@ -29,10 +31,55 @@ public class Table {
     	this.name = name;
         this.columns = columns;
         this.types=types;
+        onDelete.put(this, true);
+        onUpdate.put(this, true);
     }
-    
-    
-    
+    public Table(String name,String[] columns){
+    	this(name, columns, null);
+    }
+    /**
+     * 
+     * @param name   name of the table	
+     * @param columns	columns name	
+     * @param types   columns type
+     * @param primaryKey	primary keys of table
+     */
+    public Table(String name,String[]columns,int[] types, String primaryKey){
+    	this(name, columns, types);
+    	this.primaryKey = primaryKey;
+    	try {
+			this.addIndex(primaryKey, "PK");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    /**
+     * returns table headers
+     * @return table columns name
+     */
+    public String[] getHeaders(){
+    	return columns;
+    }
+    /**
+     * returns the name of the primary key
+     * @return	primary key name of the table
+     */
+    public String getPrimaryKeyName(){
+    	return primaryKey;
+    }
+    /**
+     * adds foreignKey to the table
+     * @param t   the referenced table
+     * @param cloumn	the name of the column in table
+     */
+    public void addForeignKey(Table t,String cloumn, Boolean onDelete, Boolean onUpdate){
+    	foreignKeys.put(t, cloumn);
+    	this.onDelete.put(this, onDelete);
+    	this.onUpdate.put(this, onUpdate);
+    	
+    	
+    }
     /**
      * creates index for table then puts all of records from LinkedList to TreeMap.
      * if there is no column name equals to columnName throws Exception.
@@ -52,12 +99,13 @@ public class Table {
     	}
     	
     	//setting value of this column to index.
-        this.index = columnName;
-        this.indexName = indexName;
-        Record record = root;
+        
+        indexes.add(columnName);
+        TreeMap<String, ArrayList<Record>> indexes = new TreeMap<String, ArrayList<Record>>();
+        Record record = root.getNext();
         // puts all the records in a tree
         while (record != null){
-            String indexValue = record.returnValues().get(this.index);
+            String indexValue = record.returnValues().get(columnName);
             if(indexes.get(indexValue) == null){
                 ArrayList<Record>records = new ArrayList<Record>();
                 records.add(record);
@@ -67,13 +115,10 @@ public class Table {
                 i.add(record);
             }
             record = record.getNext();
+            
         }
-    }
-
-    
-    
-    
-    
+        treePair.put(columnName, indexes);
+    }    
     /**
      * adds new record to the table records
      * if new record is not satisfied by length and type throws exception(InvalidRecord).
@@ -82,21 +127,23 @@ public class Table {
     public void addRecord(String[] values)throws InvalidRecord{
     	
     	//satisfying record by length and type.
-    	if(values.length!=this.types.length){
-    		throw new InvalidRecord();
-    	}
-    	for(int i=0;i<values.length;i++){
-    		//if type is INT and value is not an integer number.
-    		if(this.types[i]==0 && values[i].equals("NULL")==false && values[i].startsWith("\"")==true){
-    			throw new InvalidRecord();
-    		}
-    		//if type is VARCHAR and value is not a string.
-    		else if(this.types[i]==1 && values[i].equals("NULL")==false && values[i].startsWith("\"")==false){
-    			throw new InvalidRecord();
-    		}
+    	if(types != null){
+    		if(values.length!=this.types.length){
+        		throw new InvalidRecord();
+        	}
+        	for(int i=0;i<values.length;i++){
+        		//if type is INT and value is not an integer number.
+        		if(this.types[i]==0 && values[i].equals("NULL")==false && values[i].startsWith("\"")==true){
+        			throw new InvalidRecord();
+        		}
+        		//if type is VARCHAR and value is not a string.
+        		else if(this.types[i]==1 && values[i].equals("NULL")==false && values[i].startsWith("\"")==false){
+        			throw new InvalidRecord();
+        		}
+        	}
     	}
     	//end checking.
-    	
+    
     	
         // creates a new record and places all the values given from user to record
         Record record = new Record();
@@ -104,18 +151,31 @@ public class Table {
             record.addValues(columns[i], values[i]);
         }
         
-        if (head == null){
-            head = record;
+        // checking c1
+        if (primaryKey != ""){
+        	if (record.getValue(primaryKey) == null)
+        		throw new InvalidRecord();
+        	// checking if the primary key is repeated or not
+    		if(returnOnIndex(getPrimaryKeyName(), record.getValue(primaryKey)) != null && returnOnIndex(getPrimaryKeyName(), record.getValue(primaryKey)).size() != 0)
+    			throw new InvalidRecord();
+    		//if the primary key is null
+	    	if(record.getValue(primaryKey).equals("NULL"))
+	    		throw new InvalidRecord();
+        }
+        // checking c2
+        // for each foreign key we should check that is there any record in the referenced table 
+        for(Map.Entry<Table, String> e: foreignKeys.entrySet()){
+        	Table table = e.getKey();
+        	String column = e.getValue();
+        	if(record.getValue(column)!= null &&(table.returnOnIndex(table.getPrimaryKeyName(), record.getValue(column)) == null || table.returnOnIndex(table.getPrimaryKeyName(), record.getValue(column)).size() == 0))
+        		throw new InvalidRecord();
         }
         
-        if (root == null){
-            root = record;
-            return;
-        }
         
-        if (!index.equals("")){ // update the index tree
-            String indexValue = record.returnValues().get(index);
-            if(indexes.get(indexValue) == null){ // if there is no record with the index
+        for(Map.Entry<String, TreeMap<String, ArrayList<Record>> > e:treePair.entrySet()){
+        	TreeMap<String, ArrayList<Record>> indexes = e.getValue();
+        	String indexValue = record.returnValues().get(e.getKey());
+        	if(indexes.get(indexValue) == null){ // if there is no record with the index
                 ArrayList<Record> records = new ArrayList<Record>();
                 records.add(record);
                 indexes.put(indexValue,records );
@@ -141,10 +201,11 @@ public class Table {
     public Record[] getRecords(ClauseNode condition){
         String command = condition.toString();
         String[] parts = command.split(" ");
-        if(parts[0].equals(indexName) && parts[1].equals("=")){
+        if( indexes.contains(parts[0]) != false){
+        	String index = parts[0];
         	try {
         		String val_inString = InputHandler.getValue(parts[2], null, null);
-        		ArrayList<Record> result = returnOnIndex(val_inString);
+        		ArrayList<Record> result = returnOnIndex(index,val_inString);
 	           	 if (result == null){
 	           		 result = new ArrayList<Record>();
 	           	 }
@@ -155,6 +216,7 @@ public class Table {
 			}
         }
     	ArrayList<Record> result=new ArrayList<>();
+    	
         Record record = root;
         while (record != null){
         	String[] values = new String[columns.length];
@@ -194,8 +256,14 @@ public class Table {
      * @param columnName	name of column that must be updated.
      * @param newValue		new value to update. can be compute value.
      * @param condition		gets records by this condition.
+     * @throws InvalidRecord 
      */
-    public void updateRecords(String columnName,String newValue,ClauseNode condition){
+    public void updateRecords(String columnName,String newValue,ClauseNode condition) throws InvalidRecord{
+    	if(columnName.equals(primaryKey))
+    		if (! onUpdate.get(this))
+    			throw new InvalidRecord();
+    	
+    	
     	Record[] records=this.getRecords(condition);
     	HashMap<String, Integer> hash=new HashMap<String, Integer>();
     	
@@ -207,6 +275,23 @@ public class Table {
     	for(int i=0;i<records.length;i++){
     		temp=InputHandler.getValue(newValue, hash, records[i].getValues());
     		records[i].update(columnName, temp);
+    		if (indexes.contains(columnName)){
+    			TreeMap<String,ArrayList<Record>>tree = treePair.get(columnName);
+    			String command = condition.toString();
+    			if(command.equalsIgnoreCase("false"))
+    				return;
+    			if(command.equalsIgnoreCase("TRUE")){
+    				tree = new TreeMap<String, ArrayList<Record>>();
+    				tree.put(temp, new ArrayList<Record>(Arrays.asList(records)));
+    				treePair.put(columnName, tree);
+    				return;
+    			}
+    			String[] parts = command.split(" ");
+    			String val = InputHandler.getValue(parts[2], null, null);
+    			tree.put(val, null);
+    			ArrayList<Record>recs = tree.get(temp);
+    			recs.addAll(new ArrayList<Record>(Arrays.asList(records)));
+    		}
     	}
     }
     
@@ -231,7 +316,6 @@ public class Table {
     			result[i][j]=records[i].getValue(variableNames[j]);
     		}
     	}
-    	
     	return result;
     }
     
@@ -241,9 +325,11 @@ public class Table {
     /**
      * gets a ClauseNode as condition then removes all of satisfied record with that condition.
      * @param condition	a ClauseNode that its function satisfies records to delete.
+     * @throws InvalidRecord 
      */
-    public void removeRecords(ClauseNode condition){
-    	
+    public void removeRecords(ClauseNode condition) throws InvalidRecord{
+    	if(! onDelete.get(this))
+    		throw new InvalidRecord();
     	
         Record record = root;
         while (record != null){
@@ -263,35 +349,22 @@ public class Table {
             	check=false;
             }
             
-            
+            Record next = record.getNext();
             if (check==true) { // the data should be deleted
             	
-            	try{
-	                ArrayList<Record> records = indexes.get(record.returnValues().get(index)); // gets the arrayList which the data is in it
-	                records.remove(record); // removes it form arrayList
-            	}
-            	catch(NullPointerException exception){
-            		
-            	}
-                
-                // removes it from linkList
-                Record before = record.getBefore();
-                Record next = record.getNext();
-                if (before != null){
-                    before.setNext(next);
-                }else {
-                    root = next;
-                    root.setBefore(null);
+            	for(Map.Entry<String, TreeMap<String, ArrayList<Record>> > e:treePair.entrySet()){
+                	TreeMap<String, ArrayList<Record>> indexes = e.getValue();
+                	String indexValue = record.returnValues().get(e.getKey());
+                	try{
+    	                ArrayList<Record> records =returnOnIndex(e.getKey(),indexValue); // gets the arrayList which the data is in it
+    	                records.remove(record); // removes it form arrayList
+                	}catch(Exception ex){
+                		System.err.println(ex.getMessage());
+                	}
                 }
-                if(next != null){
-                    next.setBefore(before);
-                }else {
-                    before.setNext(null);
-                    head = before;
-                }
-
+            	record.finalize();
             }
-            record = record.getNext();
+            record = next;
         }
 
     }
@@ -302,42 +375,138 @@ public class Table {
      * @param index	index of records that must be given.
      * @return an ArrayList of record with this index.
      */
-    public ArrayList<Record> returnOnIndex(String index){
-        return indexes.get(index);
+    public ArrayList<Record> returnOnIndex(String index,String value){
+    	TreeMap<String, ArrayList<Record>> indexes = treePair.get(index);
+    	if (value == null)
+    		return null;
+    	ArrayList<Record> resArrayList = indexes.get(value);
+    	return resArrayList;
     }
-    
-    
     
     public String getName(){
     	return this.name;
     }
-
     
     
-//    public static void main(String[] args) {
-//        String[] c = {"fname","lname","year","age"};
-//        Table t = new Table("ali",c);
-//        t.addIndex("year");
-//        String[] j = {"ali","ansari","1392","he"};
-//        t.addRecord(j);
-//        j = new String[]{"alireza","ansaripour","1392","it"};
-//        t.addRecord(j);
-//        j = new String[]{"hamid","miri","1392","se"};
-//        t.addRecord(j);
-//        j = new String[]{"ali","rezaie","1394","se"};
-//        t.addRecord(j);
-//        j = new String[]{"Ahmad","Ahmadi","1393","se"};
-//        t.addRecord(j);
-//        try {
-////            t.deleteRecords("fname = ali");
-////            ArrayList<Record> records = t.returnOnIndex("1392");
-////
-////            System.out.println(records);
-//            System.out.println("result: " + t.getRecords("year = 1395 AND fname = ali OR TRUE"));
-//
-//
-//        }catch (Exception e){
-//            System.out.println("error: "+e.getMessage());
-//        }
-//    }
+    public Record[] getAllRecords(){
+    	ArrayList<Record>records = new ArrayList<Record>();
+    	Record record = root.getNext();
+    	while(record != null){
+    		records.add(record);
+    		record = record.getNext();
+    	}
+    	Record[] res=new Record[records.size()];
+        return records.toArray(res);
+    }
+    
+    
+    public Table times(Table table){
+    	String[] tableHeaders = table.getHeaders();
+    	String[] destTableHeader = new String[tableHeaders.length+columns.length];
+    	for (int i = 0; i < destTableHeader.length; i++) {
+			if(i < columns.length){
+				destTableHeader[i] = columns[i];
+			}else{
+				destTableHeader[i] = tableHeaders[i-columns.length];
+			}
+		}
+    	Record[] firstTableRecords = getAllRecords();
+    	Record[] secondTableRecord = table.getAllRecords();
+    	Table dest = new Table("times", destTableHeader);
+    	for (int i = 0; i < firstTableRecords.length; i++) {
+			for (int j = 0; j < secondTableRecord.length; j++) {
+				Record record = new Record();
+				for (int k = 0; k < destTableHeader.length; k++) {
+					if(k < columns.length){
+						record.addValues(destTableHeader[k], firstTableRecords[i].getValue(destTableHeader[k]));
+					}else{
+						record.addValues(destTableHeader[k], secondTableRecord[j].getValue(destTableHeader[k]));
+					}
+				}
+				try {
+					dest.addRecord(record.getValues());
+				} catch (InvalidRecord e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+		}
+    	
+    	return dest;
+    }
+    
+    public Table join(Table table){
+    	String sharedKey = foreignKeys.get(table);
+    	if (sharedKey == null)
+    		return table.join(this);
+    	Record[] firstTableRecords = getAllRecords();
+    	String[] tableHeaders = table.getHeaders();
+    	String[] destTableHeader = new String[tableHeaders.length+columns.length];
+    	for (int i = 0; i < destTableHeader.length; i++) {
+			if(i < columns.length){
+				destTableHeader[i] = columns[i];
+			}else{
+				destTableHeader[i] = tableHeaders[i-columns.length];
+			}
+		}
+    	Table dest = new Table("join", destTableHeader);
+    	for (int i = 0; i < firstTableRecords.length; i++) {
+			String value = firstTableRecords[i].getValue(sharedKey);
+			if(value == null)
+				continue;
+			ArrayList<Record>records = table.returnOnIndex(table.getPrimaryKeyName(), value);
+			Record[] secondTableRecord = new Record[records.size()];
+			records.toArray(secondTableRecord);
+			for (int j = 0; j < secondTableRecord.length; j++) {
+				Record record = new Record();
+				String[] values = new String[destTableHeader.length];
+				for (int k = 0; k < destTableHeader.length; k++) {
+					if(k < columns.length){
+						String val = firstTableRecords[i].getValue(destTableHeader[k]);
+						values[k] = val;
+					}else{
+						String val = secondTableRecord[j].getValue(destTableHeader[k]);
+						if (val == null)
+							val = "NULL";
+						values[k] = val;
+					}
+				}
+				try {
+					dest.addRecord(values);
+				} catch (InvalidRecord e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+		}	
+    	return dest;
+    }
+    
+    
+    public boolean equals(Object table){
+    	Table t = (Table) table;
+    	if (t.getName() == this.getName())
+    		return true;
+    	return false;
+    }
+    
+    public static void main(String[] args) throws InvalidRecord {
+    	Table t1 = new Table("ali", new String[]{"name","pk1"},null,"pk1");
+    	Table t2 = new Table("reza", new String[]{"pk2","fk","n2"},null,"pk2");
+    	t2.addForeignKey(t1, "fk",true,true);
+    	t1.addRecord(new String[]{"ali","12"});
+    	ClauseNode c = InputHandler.createClauseTree("TRUE");
+    	t1.addRecord(new String[]{"ahmad","13"});
+    	t1.updateRecords("name", "jj", c);
+    	t2.addRecord(new String[]{"2","12","j"});
+    	t2.addRecord(new String[]{"3","13","k"});
+    	t2.addRecord(new String[]{"4","13","l"});
+    	Record[] records = t1.times(t2).getAllRecords();
+    	for (int i = 0; i < records.length; i++) {
+			System.out.println(records[i]);
+		}
+    }
+    
 }

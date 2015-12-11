@@ -11,6 +11,7 @@ public class TableManager {
 	private static HashMap<String, Table> tables=new HashMap<String, Table>();
 	
 	
+	
 	/**
 	 * 
 	 */
@@ -45,7 +46,8 @@ public class TableManager {
 	
 	
 	public static void createIndex(String tableName,String indexName,String columnName){
-		Table t = tables.get(tableName);
+		
+		Table t = tables.get(tableName.trim());
 		try {
 			t.addIndex(columnName, indexName);
 		} catch (Exception e) {
@@ -76,7 +78,12 @@ public class TableManager {
 	
 	public static void updateRecords(String tableName,String columnName,String newValue,ClauseNode condition){
 		Table table=tables.get(tableName);
-		table.updateRecords(columnName, newValue, condition);
+		try {
+			table.updateRecords(columnName, newValue, condition);
+		} catch (InvalidRecord e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	
@@ -100,7 +107,12 @@ public class TableManager {
 	public static void removeRecords(String tableName,ClauseNode condition){
 		
 		Table table=tables.get(tableName);
-		table.removeRecords(condition);
+		try {
+			table.removeRecords(condition);
+		} catch (InvalidRecord e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	
