@@ -11,7 +11,10 @@ public class Record {
     private HashMap<String ,String> values = new HashMap<String, String>();
     
     public void addValues(String key, String value){
-    	
+    	if (value == null){
+    		values.put(key, null);
+    		return;
+    	}
     	if(value.equals("NULL")==true){
     		values.put(key,null);
     	}
@@ -81,5 +84,11 @@ public class Record {
             before.setNext(next);
         if (next != null)
             next.setBefore(before);
+    }
+    protected void finalize(){
+    	if(this.next != null){
+    		next.setBefore(before);
+    	}
+    	before.setNext(next);
     }
 }
