@@ -1,7 +1,6 @@
 package controller.commands;
 
 import java.util.regex.Pattern;
-
 import model.TableManager;
 import controller.ClauseNode;
 import controller.InputHandler;
@@ -27,6 +26,8 @@ public class SelectCommand extends Command{
 		for(int i=0;i<selectedVariables.length;i++){
 			selectedVariables[i]=components[i+2];
 		}
+		
+		
 		
 		ClauseNode node=InputHandler.createClauseTree(condition);
 		
@@ -61,13 +62,15 @@ public class SelectCommand extends Command{
 			throw new InvalidParam();
 		}
 	}
-
+	
+	
+	
 	
 	@Override
 	public void print() {
 		
 		if(actionResult.length==0){
-			System.out.println("NO RESULT");
+			System.out.println("NO RESULTS");
 			return;
 		}
 		
@@ -78,7 +81,12 @@ public class SelectCommand extends Command{
 		System.out.println(temp);
 		for(int i=0;i<actionResult.length;i++){
 			for(int j=0;j<actionResult[0].length;j++){
-				System.out.print(actionResult[i][j]);
+				String temp1=actionResult[i][j];
+				if(temp1.startsWith("\"")&&temp1.endsWith("\"")){
+					temp1=temp1.substring(1,temp1.length()-1);
+				}
+				
+				System.out.print(temp1);
 				if(j<actionResult[0].length-1){
 					System.out.print(",");
 				}

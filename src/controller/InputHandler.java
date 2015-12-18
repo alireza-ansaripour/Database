@@ -1,8 +1,8 @@
 package controller;
 
 
-import java.util.EmptyStackException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 
 
@@ -360,10 +360,12 @@ public class InputHandler {
 	 * @return
 	 */
 	public static String getValue(String computeValue,HashMap<String, Integer> columns,String[] variables){
-
+		
+		
 		String[] operators={"\"","+","-","*","/"};
 		String copy=computeValue;
 		int[] operatorIndex=getFirstOperator(computeValue, operators);
+		
 		
 		String operand1;
 		
@@ -385,6 +387,7 @@ public class InputHandler {
 		}
 		
 		
+		
 		String operand2;
 		String operator;
 		for(;;){
@@ -398,7 +401,8 @@ public class InputHandler {
 			copy=copy.substring(1, copy.length());
 			
 			operatorIndex=getFirstOperator(copy, operators);
-			// "
+			
+			
 			if(operatorIndex==null){
 				operand2=getCorrectValue(copy, columns, variables);
 				
@@ -416,6 +420,7 @@ public class InputHandler {
 				
 				break;
 			}
+			// "
 			if(operatorIndex[1]==0){
 				int tempIndex=copy.indexOf("\"", 1);
 				operand2=copy.substring(0, tempIndex+1);
@@ -437,6 +442,7 @@ public class InputHandler {
 			if(operand1!=null){
 				operand1=string;				
 			}
+			
 			
 		}
 		
@@ -462,7 +468,6 @@ public class InputHandler {
 	 * @return if string is name of a variable return it else return string.
 	 */
 	private static String getCorrectValue(String string,HashMap<String, Integer> columns,String[] variables){
-		
 		try{
 			Integer.parseInt(string);
 		}
@@ -488,7 +493,10 @@ public class InputHandler {
 			Integer.parseInt(string);
 		}
 		catch(NumberFormatException exception){
-			return "\""+string+"\"";
+			if(string.startsWith("\"")==false){
+				return "\""+string+"\"";
+			}
+			
 		}
 		return string;
 	}
@@ -615,6 +623,7 @@ public class InputHandler {
 	
 	
 }
+
 
 
 
