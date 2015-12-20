@@ -1,6 +1,7 @@
 package model;
 
 import controller.*;
+
 import java.util.*;
 
 /**
@@ -15,9 +16,7 @@ public class Table {
     public String index = "";
     public Record root= new Record(),head = root;
     public String primaryKey ="";
-    
-    
-    public static HashMap<Table, Boolean> onDelete = new HashMap<Table, Boolean>(), onUpdate= new HashMap<Table, Boolean>();
+    private boolean onDelete = true,onUpdate = true;
 	public int pK;
     public ArrayList<Table>refrences= new ArrayList<Table>();
     public HashMap<String,TreeMap<String, ArrayList<Record>>>treePair = new HashMap<String, TreeMap<String,ArrayList<Record>>>(); // <columnName,Treemap>
@@ -64,7 +63,7 @@ public class Table {
      * @param name name of one of this table columns.
      * @throws InvalidParam if name is not name of this table columns.
      */
-    public void setPrimaryKeyName(String name)throws InvalidParam{	
+    public void setPrimaryKeyName(String name)throws InvalidParam{
     	boolean found=false;
     	for(int i=0;i<this.columns.length;i++){
     		if(this.columns[i].equals(name)==true){
@@ -78,6 +77,12 @@ public class Table {
     	}
     	
     	this.primaryKey=name;
+    	try {
+			this.addIndex(primaryKey, "PK");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
     
     
@@ -86,11 +91,13 @@ public class Table {
      * @param t   the referenced table
      * @param cloumn	the name of the column in table
      */
-    public void addForeignKey(Table t,String cloumn, Boolean onDelete, Boolean onUpdate){
+    public void addForeignKey(Table t,String cloumn, Boolean Delete, Boolean Update){
     	foreignKeys.put(t, cloumn);
-    	this.onDelete.put(this, onDelete);
-    	this.onUpdate.put(this, onUpdate);
-    	
+    	System.err.println(t.name+" "+Delete.toString()+" "+Update.toString());
+    	if(!Delete)
+    		t.onDelete = false;
+    	if(!Update)
+    		t.onUpdate = false;
     }
     
     /**
@@ -266,7 +273,7 @@ public class Table {
      */
     public void updateRecords(String columnName,String newValue,ClauseNode condition) throws InvalidRecord{
     	if(columnName.equals(primaryKey))
-    		if (! onUpdate.get(this))
+    		if (!onUpdate)
     			throw new InvalidRecord();
     	
     	
@@ -339,9 +346,9 @@ public class Table {
      * @throws InvalidRecord 
      */
     public void removeRecords(ClauseNode condition) throws InvalidRecord{
-    	if(! onDelete.get(this))
+    	System.err.println(onDelete);
+    	if(!onDelete)
     		throw new InvalidRecord();
-    	
         Record record = root.getNext();
         while (record != null){
             String[] values = new String[columns.length];
@@ -423,17 +430,21 @@ public class Table {
     
     public Table times(Table table){
     	String[] tableHeaders = table.getHeaders();
+    	String tableName = table.getName();
     	String[] destTableHeader = new String[tableHeaders.length+columns.length];
+    	String[] copy = new String[destTableHeader.length];
     	for (int i = 0; i < destTableHeader.length; i++) {
 			if(i < columns.length){
 				destTableHeader[i] = columns[i];
+				copy[i] = name+"."+destTableHeader[i];
 			}else{
 				destTableHeader[i] = tableHeaders[i-columns.length];
+				copy[i] = tableName+"."+destTableHeader[i];
 			}
 		}
     	Record[] firstTableRecords = getAllRecords();
     	Record[] secondTableRecord = table.getAllRecords();
-    	Table dest = new Table("times", destTableHeader);
+    	Table dest = new Table("times", copy);
     	for (int i = 0; i < firstTableRecords.length; i++) {
 			for (int j = 0; j < secondTableRecord.length; j++) {
 				String[] values = new String[destTableHeader.length];
@@ -465,20 +476,26 @@ public class Table {
     
     
     public Table join(Table table){
+    	System.err.println(table);
     	String sharedKey = foreignKeys.get(table);
+    	
     	if (sharedKey == null)
     		return table.join(this);
+    	String tableName = table.getName();
     	Record[] firstTableRecords = getAllRecords();
     	String[] tableHeaders = table.getHeaders();
     	String[] destTableHeader = new String[tableHeaders.length+columns.length];
+    	String[] copy = new String[destTableHeader.length];
     	for (int i = 0; i < destTableHeader.length; i++) {
 			if(i < columns.length){
 				destTableHeader[i] = columns[i];
+				copy[i] = name+"."+destTableHeader[i];
 			}else{
 				destTableHeader[i] = tableHeaders[i-columns.length];
+				copy[i] = tableName+"."+destTableHeader[i];
 			}
 		}
-    	Table dest = new Table("join", destTableHeader);
+    	Table dest = new Table("join", copy);
     	for (int i = 0; i < firstTableRecords.length; i++) {
 			String value = firstTableRecords[i].getValue(sharedKey);
 			if(value == null)
