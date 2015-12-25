@@ -290,10 +290,9 @@ public class Table {
     	String temp;
     	for(int i=0;i<records.length;i++){
     		temp=InputHandler.getValue(newValue, hash, records[i].getValues(this.columns));
-    		TreeMap<String, ArrayList<Record>>t = treePair.get(primaryKey);
-    		if (t != null){
+    		TreeMap<String, ArrayList<Record>>t = treePair.get(primaryKey); // the primary key tree
+    		if (t != null){ // if there is a primary key
     			ArrayList<Record>records2 = t.get(temp);
-        		
         		// if there is a record with that primary key
         		if(records2 != null && records2.size() != 0)
         			throw new C1Constrain();
@@ -302,12 +301,19 @@ public class Table {
     		
     		// it should check all the referenced table 
     		//TODO : for each record we must check whether referenced table has that pk or not
+    		
+    		
+    		
     		for(Map.Entry<Table, String> e: foreignKeys.entrySet()){
             	Table table = e.getKey();
             	String column = e.getValue();
-            	System.err.println(column+":"+records[i].getValue(column));
-            	if(records[i].getValue(column)!= null &&(table.returnOnIndex(table.getPrimaryKeyName(), records[i].getValue(column)) == null || table.returnOnIndex(table.getPrimaryKeyName(), records[i].getValue(column)).size() == 0))
-            		throw new C2Constrain();
+            	if(column.equals(columnName)){
+            		if(table.returnOnIndex(table.getPrimaryKeyName(), temp) == null)
+            			throw new C2Constrain();
+            		if(table.returnOnIndex(table.getPrimaryKeyName(), temp).size() == 0)
+            			throw new C2Constrain();
+            	}
+            	
             }
     		
     		
