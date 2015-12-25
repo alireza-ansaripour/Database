@@ -93,7 +93,7 @@ public class Table {
      */
     public void addForeignKey(Table t,String cloumn, Boolean Delete, Boolean Update){
     	foreignKeys.put(t, cloumn);
-    	System.err.println(t.name+" "+Delete.toString()+" "+Update.toString());
+    	t.refrences.add(this);
     	if(!Delete)
     		t.onDelete = false;
     	if(!Update)
@@ -148,8 +148,10 @@ public class Table {
      * adds new record to the table records
      * if new record is not satisfied by length and type throws exception(InvalidRecord).
      * @param values	values of a record.
+     * @throws C1Constrain if another record exist with that pk or the pk is null
+     * @throws C2Constrain checks whether the fk exists in the referenced table
      */
-    public void addRecord(String[] values)throws InvalidRecord{
+    public void addRecord(String[] values)throws InvalidRecord, C1Constrain, C2Constrain{
     	
     	//satisfying record by length and type.
     	if(types != null){
@@ -180,13 +182,13 @@ public class Table {
         // checking c1
         if (primaryKey != ""){
         	if (record.getValue(primaryKey) == null)
-        		throw new InvalidRecord();
+        		throw new C1Constrain();
         	// checking if the primary key is repeated or not
     		if(returnOnIndex(getPrimaryKeyName(), record.getValue(primaryKey)) != null && returnOnIndex(getPrimaryKeyName(), record.getValue(primaryKey)).size() != 0)
-    			throw new InvalidRecord();
+    			throw new C1Constrain();
     		//if the primary key is null
 	    	if(record.getValue(primaryKey).equals("NULL"))
-	    		throw new InvalidRecord();
+	    		throw new C1Constrain();
         }
         // checking c2
         // for each foreign key we should check that is there any record in the referenced table 
@@ -194,9 +196,8 @@ public class Table {
         	Table table = e.getKey();
         	String column = e.getValue();
         	if(record.getValue(column)!= null &&(table.returnOnIndex(table.getPrimaryKeyName(), record.getValue(column)) == null || table.returnOnIndex(table.getPrimaryKeyName(), record.getValue(column)).size() == 0))
-        		throw new InvalidRecord();
+        		throw new C2Constrain();
         }
-        
         
         for(Map.Entry<String, TreeMap<String, ArrayList<Record>> > e:treePair.entrySet()){
         	TreeMap<String, ArrayList<Record>> indexes = e.getValue();
@@ -270,16 +271,18 @@ public class Table {
      * @param newValue		new value to update. can be compute value.
      * @param condition		gets records by this condition.
      * @throws InvalidRecord 
+     * @throws C2Constrain  if onDelete is false
+     * @throws C1Constrain  if another record is with that pk  
      */
-    public void updateRecords(String columnName,String newValue,ClauseNode condition) throws InvalidRecord{
+    public void updateRecords(String columnName,String newValue,ClauseNode condition) throws InvalidRecord, C2Constrain, C1Constrain  {
+    	// if the onDelete is false then this method will throw an exception
     	if(columnName.equals(primaryKey))
     		if (!onUpdate)
-    			throw new InvalidRecord();
+    			throw new C2Constrain();
     	
     	
     	Record[] records=this.getRecords(condition);
     	HashMap<String, Integer> hash=new HashMap<String, Integer>();
-    	
     	for(int i=0;i<this.columns.length;i++){
     		hash.put(this.columns[i], new Integer(i));
     	}
@@ -287,24 +290,43 @@ public class Table {
     	String temp;
     	for(int i=0;i<records.length;i++){
     		temp=InputHandler.getValue(newValue, hash, records[i].getValues(this.columns));
-    		records[i].update(columnName, temp);
-    		if (indexes.contains(columnName)){
-    			TreeMap<String,ArrayList<Record>>tree = treePair.get(columnName);
-    			String command = condition.toString();
-    			if(command.equalsIgnoreCase("false"))
-    				return;
-    			if(command.equalsIgnoreCase("TRUE")){
-    				tree = new TreeMap<String, ArrayList<Record>>();
-    				tree.put(temp, new ArrayList<Record>(Arrays.asList(records)));
-    				treePair.put(columnName, tree);
-    				return;
-    			}
-    			String[] parts = command.split(" ");
-    			String val = InputHandler.getValue(parts[2], null, null);
-    			tree.put(val, null);
-    			ArrayList<Record>recs = tree.get(temp);
-    			recs.addAll(new ArrayList<Record>(Arrays.asList(records)));
+    		TreeMap<String, ArrayList<Record>>t = treePair.get(primaryKey);
+    		if (t != null){
+    			ArrayList<Record>records2 = t.get(temp);
+        		
+        		// if there is a record with that primary key
+        		if(records2 != null && records2.size() != 0)
+        			throw new C1Constrain();
     		}
+    		
+    		
+    		// it should check all the referenced table 
+    		//TODO : for each record we must check whether referenced table has that pk or not
+    		for(Map.Entry<Table, String> e: foreignKeys.entrySet()){
+            	Table table = e.getKey();
+            	String column = e.getValue();
+            	System.err.println(column+":"+records[i].getValue(column));
+            	if(records[i].getValue(column)!= null &&(table.returnOnIndex(table.getPrimaryKeyName(), records[i].getValue(column)) == null || table.returnOnIndex(table.getPrimaryKeyName(), records[i].getValue(column)).size() == 0))
+            		throw new C2Constrain();
+            }
+    		
+    		
+    		
+    		if (indexes.contains(columnName)){ // if the update is on a column name
+    			ArrayList<Record> r = returnOnIndex(columnName, records[i].getValue(columnName));
+    			r.remove(records[i]);
+    			TreeMap<String,ArrayList<Record>>tree = treePair.get(columnName);
+    			ArrayList<Record> r2 = tree.get(temp);
+    			if (r2== null){
+    				tree.put(temp, new ArrayList<Record>());
+    				r2 = tree.get(temp);
+    			}
+    			r2.add(records[i]);
+    		}
+    		records[i].update(columnName, temp);
+    		for (Table table : refrences) {
+				table.updateByForeignKey(this, records[i].getValue(primaryKey));
+			}
     	}
     	
     	
@@ -346,7 +368,6 @@ public class Table {
      * @throws InvalidRecord 
      */
     public void removeRecords(ClauseNode condition) throws InvalidRecord{
-    	System.err.println(onDelete);
     	if(!onDelete)
     		throw new InvalidRecord();
         Record record = root.getNext();
@@ -383,12 +404,51 @@ public class Table {
             	}
             	Record before = record.getBefore();
             	before.setNext(next);
+            	for (Table table : refrences) {
+					table.removeByForeignKey(this, record.getValue(primaryKey));
+				}
             }
             record = next;
         }
 
     }
-    
+    /**
+     * when the onDelete is cascade the referenced table removes the records
+     * @param t	     :The referenced table
+     * @param value  :The value of the fk
+     */
+    private void removeByForeignKey(Table t,String value){
+    	Record[] records = getAllRecords();
+    	String key = "";
+    	for(Map.Entry<Table, String>e:foreignKeys.entrySet()){
+    		Table table = e.getKey();
+    		if (table.name == t.name)
+    			key = foreignKeys.get(table);
+    	}
+    	for (Record record : records) {
+			if(record.getValue(key).equals(value)){
+				Record next = record.getNext();
+				Record before = record.getBefore();
+				if(next != null)
+					next.setBefore(before);
+				else
+					t.head = record.getBefore();
+				before.setNext(next);
+			}
+		}
+    }
+    /**
+     * like deleteOnFK
+     * @param t     :the ref table	
+     * @param value : the value to be deleted
+     */
+    private void updateByForeignKey(Table t,String value){
+    	String key = foreignKeys.get(t);
+    	Record[] records = getAllRecords();
+    	for (Record record : records) {
+			record.update(key, value);
+		}
+    }
     
     /**
      * gets an index then returns all of records with that index in an ArrayList.
@@ -464,6 +524,12 @@ public class Table {
 				} catch (InvalidRecord e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
+				} catch (C1Constrain e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (C2Constrain e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 			
@@ -476,9 +542,8 @@ public class Table {
     
     
     public Table join(Table table){
-    	System.err.println(table);
-    	String sharedKey = foreignKeys.get(table);
     	
+    	String sharedKey = foreignKeys.get(table);
     	if (sharedKey == null)
     		return table.join(this);
     	String tableName = table.getName();
@@ -519,6 +584,12 @@ public class Table {
 				try {
 					dest.addRecord(values);
 				} catch (InvalidRecord e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (C1Constrain e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (C2Constrain e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}

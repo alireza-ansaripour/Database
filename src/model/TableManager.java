@@ -101,7 +101,7 @@ public class TableManager {
 					}
 					
 					table.addForeignKey(fkTable, fKeyName, onDelete, onUpdate);
-					copy=matcher.group(3);
+					copy=matcher.group(5);
 				}
 				else{
 					throw new InvalidParam();
@@ -203,6 +203,12 @@ public class TableManager {
 			table.updateRecords(columnName, newValue, condition);
 		} catch (InvalidRecord e) {
 			e.printStackTrace();
+		} catch (C2Constrain e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (C1Constrain e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
@@ -215,6 +221,12 @@ public class TableManager {
 			table.addRecord(variables);
 		} catch (InvalidRecord e) {
 			throw new InvalidParam();
+		} catch (C1Constrain e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (C2Constrain e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 	}
