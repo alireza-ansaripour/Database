@@ -275,7 +275,7 @@ public class Table {
      * @throws C1Constrain  if another record is with that pk  
      */
     public void updateRecords(String columnName,String newValue,ClauseNode condition) throws InvalidRecord, C2Constrain, C1Constrain  {
-    	// if the onDelete is false then this method will throw an exception
+    	// if the onUpdate is false then this method will throw an exception
     	if(columnName.equals(primaryKey))
     		if (!onUpdate)
     			throw new C2Constrain();
@@ -297,13 +297,7 @@ public class Table {
         		if(records2 != null && records2.size() != 0)
         			throw new C1Constrain();
     		}
-    		
-    		
     		// it should check all the referenced table 
-    		//TODO : for each record we must check whether referenced table has that pk or not
-    		
-    		
-    		
     		for(Map.Entry<Table, String> e: foreignKeys.entrySet()){
             	Table table = e.getKey();
             	String column = e.getValue();
@@ -315,9 +309,6 @@ public class Table {
             	}
             	
             }
-    		
-    		
-    		
     		if (indexes.contains(columnName)){ // if the update is on a column name
     			ArrayList<Record> r = returnOnIndex(columnName, records[i].getValue(columnName));
     			r.remove(records[i]);
@@ -371,11 +362,11 @@ public class Table {
     /**
      * gets a ClauseNode as condition then removes all of satisfied record with that condition.
      * @param condition	a ClauseNode that its function satisfies records to delete.
-     * @throws InvalidRecord 
+     * @throws C2Constrain if the onDelete is false
      */
-    public void removeRecords(ClauseNode condition) throws InvalidRecord{
+    public void removeRecords(ClauseNode condition) throws  C2Constrain{
     	if(!onDelete)
-    		throw new InvalidRecord();
+    		throw new C2Constrain();
         Record record = root.getNext();
         while (record != null){
             String[] values = new String[columns.length];
