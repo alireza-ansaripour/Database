@@ -212,9 +212,11 @@ public class Table {
             }
         }
         // sets the next and before of the record
+        System.err.println(head.getValue(primaryKey));
         head.setNext(record);
         record.setBefore(head);
         head = record; // update the head
+        System.err.println(head.getValue(primaryKey));
         
     }
 
@@ -233,6 +235,7 @@ public class Table {
         while (record != null){
         	
             
+        	System.err.println(record.getValue(primaryKey));
         	String[] values = new String[columns.length];
             HashMap<String, Integer> column=new HashMap<String, Integer>();
             for (int j = 0; j < columns.length; j++) {
@@ -271,14 +274,14 @@ public class Table {
      * @param newValue		new value to update. can be compute value.
      * @param condition		gets records by this condition.
      * @throws InvalidRecord 
-     * @throws C2Constrain  if onDelete is false
      * @throws C1Constrain  if another record is with that pk  
+     * @throws FKConstrain  if onDelete is false
      */
-    public void updateRecords(String columnName,String newValue,ClauseNode condition) throws InvalidRecord, C2Constrain, C1Constrain  {
+    public void updateRecords(String columnName,String newValue,ClauseNode condition) throws InvalidRecord, C2Constrain, C1Constrain, FKConstrain  {
     	// if the onUpdate is false then this method will throw an exception
     	if(columnName.equals(primaryKey))
     		if (!onUpdate)
-    			throw new C2Constrain();
+    			throw new FKConstrain();
     	
     	
     	Record[] records=this.getRecords(condition);
@@ -429,7 +432,7 @@ public class Table {
 				if(next != null)
 					next.setBefore(before);
 				else
-					t.head = record.getBefore();
+					head = record.getBefore();
 				before.setNext(next);
 			}
 		}

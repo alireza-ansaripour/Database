@@ -248,7 +248,8 @@ public class TableManager {
 		Table table=tables.get(tableName);
 		try {
 			table.removeRecords(condition);
-		} catch (InvalidRecord e) {
+		} catch (C2Constrain e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
