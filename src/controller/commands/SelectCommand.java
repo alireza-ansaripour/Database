@@ -78,7 +78,12 @@ public class SelectCommand extends Command{
 		}
 		
 		String temp=selectedVariables[0];
+		String[] tempArray;
 		for(int i=1;i<selectedVariables.length;i++){
+			if(selectedVariables[i].contains(".")==true){
+				tempArray=selectedVariables[i].split(".");
+				selectedVariables[i]=tempArray[1];
+			}
 			temp+=","+selectedVariables[i];
 		}
 		System.out.println(temp);
