@@ -2,6 +2,8 @@ package controller;
 
 import java.util.HashMap;
 
+import controller.commands.OrException;
+
 
 public class ClauseNode {
 	
@@ -96,6 +98,7 @@ public class ClauseNode {
 	
 	
 	
+	
 	/**
 	 * gets a string and remove free space of start and end of it.
 	 * @param str
@@ -111,6 +114,65 @@ public class ClauseNode {
 			
 		}
 		return str.substring(index1, index2+1);
+	}
+	
+	
+	
+	
+	/**
+	 * this constructor is used when all operator in WHERE clause are AND and there is no constant 
+	 * or OR operator.
+	 * @param variables an array: array[][0] is variable name, array[][1] is variable value,
+	 * array[][2] is operator.
+	 */
+	public ClauseNode(String[][] variables){
+		
+		if(variables.length==1){
+			
+			this.isLeaf=true;
+			this.isConst=false;
+			
+			this.variableName=variables[0][0];
+			this.variableValue=variables[0][1];
+			if(variables[0][2].equals(">")==true){
+				this.singleOperator=4;
+			}
+			else if(variables[0][2].equals(">=")==true){
+				this.singleOperator=3;
+			}
+			else if(variables[0][2].equals("=")==true){
+				this.singleOperator=2;
+			}
+			else if(variables[0][2].equals("<=")==true){
+				this.singleOperator=1;
+			}
+			// variables[0][2].equals("<")==true
+			else{
+				this.singleOperator=0;
+			}
+			
+			return;
+		}
+		
+		this.isLeaf=false;
+		this.isConst=false;
+		this.isFull=true;
+		
+		String[][] left=new String[variables.length-1][2];
+		String[][] right=new String[1][2];
+		
+		for(int i=0;i<left.length;i++){
+			left[i]=variables[i];
+		}
+		
+		right[0]=variables[variables.length-1];
+		
+		this.rightNode=new ClauseNode(right);
+		this.leftNode=new ClauseNode(left);
+		
+		this.operator=0;
+		
+		return;
 	}
 	
 	
@@ -335,10 +397,11 @@ public class ClauseNode {
 	
 	/**
 	 * @return if this clause does not contains AND,OR and is not TRUE,FALSE
-	 *  returns an array: array[0]:variable name , array[1]:variable value, array[2]:operator.
+	 *  returns an array: array[][0]:variable name , array[][1]:variable value, array[][2]:operator.
 	 * @throws Exception if this node is TRUE,FALSE or contains AND,OR.
 	 */
-	public String[] getVariable()throws Exception{
+	public String[][] getVariable()throws OrException,TrueCondition,FalseCondition{
+		String[][] result = null;
 		if(this.isLeaf==true&&this.isConst==false){
 			String operator;
 			if(this.singleOperator==4){
@@ -356,16 +419,68 @@ public class ClauseNode {
 			else{
 				operator="<";
 			}
-			return new String[]{this.variableName,this.variableValue,operator};
+			result=new String[1][3];
+			result[0]=new String[]{this.variableName,this.variableValue,operator};
 		}
-		else{
-			throw new Exception();
+		else if(this.isLeaf==false){
+			
+			if(this.operator==1){
+				throw new OrException();
+			}
+			
+			String[][] left;
+			try{
+				left=this.leftNode.getVariable();
+			}
+			catch(TrueCondition exception){
+				left=new String[0][0];
+			}
+			
+			String[][] right;
+			try{
+				right=this.rightNode.getVariable();
+			}
+			catch(TrueCondition exception){
+				right=new String[0][0];
+			}
+			
+			result=new String[right.length+left.length][3];
+			
+			
+			int index=0;
+			
+			for(index=0;index<left.length;index++){
+				result[index]=left[index];
+			}
+			
+			for(int i=0;i<right.length;i++,index++){
+				result[index]=right[i];
+			}
+			
+			
+			
 		}
+		else if(this.isConst==true){
+			if(this.not==false){
+				if(this.constant==true){
+					throw new TrueCondition();
+				}
+				else{
+					throw new FalseCondition();
+				}
+			}
+			else{
+				if(this.constant==true){
+					throw new FalseCondition();
+				}
+				else{
+					throw new TrueCondition();
+				}
+			}
+		}
+		
+		return result;
 	}
-	
-	
-	
-	
 	
 	
 	
