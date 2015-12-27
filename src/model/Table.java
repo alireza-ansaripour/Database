@@ -228,14 +228,26 @@ public class Table {
      * @return an ArrayList of satisfied records. 
      */
     public Record[] getRecords(ClauseNode condition){
+        try {
+			String[] parts = condition.getVariable();
+			
+			String temp = InputHandler.getValue(parts[1],null, null);
+			if (treePair.containsKey(parts[0])){
+				if(parts[2].equals("=")){
+					ArrayList<Record>records = returnOnIndex(parts[0], temp);
+					Record[] res = new Record[records.size()];
+					records.toArray(res);
+					return res;
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("SFDF");
+		}
         
     	
     	ArrayList<Record> result=new ArrayList<>();
         Record record = root.getNext();
         while (record != null){
-        	
-            
-        	System.err.println(record.getValue(primaryKey));
         	String[] values = new String[columns.length];
             HashMap<String, Integer> column=new HashMap<String, Integer>();
             for (int j = 0; j < columns.length; j++) {
@@ -243,8 +255,6 @@ public class Table {
                 values[j] = record.returnValues().get(columns[j]);
             }
             
-            //**********************************************
-//            ClauseNode root= InputHandler.createClauseTree(condition);
             boolean check=false;
             try{
             	check=condition.checkCondition(column, values);
@@ -255,7 +265,6 @@ public class Table {
             
             if (check==true) { // if the record satisfies the condition
                 result.add(record);
-//            	data.add(record.returnValues());
             }
             
             record = record.getNext();
@@ -366,8 +375,9 @@ public class Table {
      * gets a ClauseNode as condition then removes all of satisfied record with that condition.
      * @param condition	a ClauseNode that its function satisfies records to delete.
      * @throws C2Constrain if the onDelete is false
+     * @throws FKConstrain 
      */
-    public void removeRecords(ClauseNode condition) throws  C2Constrain{
+    public void removeRecords(ClauseNode condition) throws  C2Constrain, FKConstrain{
     	if(!onDelete)
     		throw new C2Constrain();
         Record record = root.getNext();
@@ -397,6 +407,11 @@ public class Table {
                 		System.err.println(ex.getMessage());
                 	}
                 }
+            	for (Table table : refrences) {
+					table.removeByForeignKey(this, record.getValue(primaryKey));
+				}
+            	
+            	
             	if(next == null){
             		head = record.getBefore();
             	}else{
@@ -404,9 +419,7 @@ public class Table {
             	}
             	Record before = record.getBefore();
             	before.setNext(next);
-            	for (Table table : refrences) {
-					table.removeByForeignKey(this, record.getValue(primaryKey));
-				}
+            	
             }
             record = next;
         }
@@ -416,8 +429,11 @@ public class Table {
      * when the onDelete is cascade the referenced table removes the records
      * @param t	     :The referenced table
      * @param value  :The value of the fk
+     * @throws FKConstrain if onDelete is false
      */
-    private void removeByForeignKey(Table t,String value){
+    private void removeByForeignKey(Table t,String value) throws FKConstrain{
+    	if(! onDelete)
+    		throw new FKConstrain();
     	Record[] records = getAllRecords();
     	String key = "";
     	for(Map.Entry<Table, String>e:foreignKeys.entrySet()){
@@ -427,6 +443,12 @@ public class Table {
     	}
     	for (Record record : records) {
 			if(record.getValue(key).equals(value)){
+				if(record.getValue(primaryKey)!=null){
+					String val = record.getValue(primaryKey);
+					for (Table table : refrences) {
+						table.removeByForeignKey(this, val);
+					}
+				}
 				Record next = record.getNext();
 				Record before = record.getBefore();
 				if(next != null)

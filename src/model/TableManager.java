@@ -209,6 +209,9 @@ public class TableManager {
 		} catch (C1Constrain e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (FKConstrain e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
@@ -249,6 +252,9 @@ public class TableManager {
 		try {
 			table.removeRecords(condition);
 		} catch (C2Constrain e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FKConstrain e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
