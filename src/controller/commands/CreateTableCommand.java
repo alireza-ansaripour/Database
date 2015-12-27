@@ -1,6 +1,9 @@
 package controller.commands;
 
 import java.util.regex.Pattern;
+
+import model.C1Constrain;
+import model.C2Constrain;
 import model.TableManager;
 import controller.InvalidParam;
 
@@ -10,7 +13,7 @@ public class CreateTableCommand extends Command{
 	
 	
 	@Override
-	public boolean doAction(String command) throws InvalidParam{
+	public boolean doAction(String command) throws InvalidParam,C1Constrain,C2Constrain{
 		
 		if(command.startsWith("CREATE TABLE")==false){
 			return false;
@@ -78,3 +81,4 @@ public class CreateTableCommand extends Command{
 	
 	
 }
+

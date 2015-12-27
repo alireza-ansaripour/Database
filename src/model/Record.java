@@ -59,7 +59,16 @@ public class Record {
     	for(int i=0;i<names.length;i++){
     		result[i]=(String)this.values.get(names[i]);
     	}
+    	
     	return result;
+    	
+//    	ArrayList<String> list=new ArrayList<>();
+//    	for(String value: values.values()){
+//    		list.add(value);
+//    	}
+//    	String[] result=new String[list.size()];
+//    	return list.toArray(result);
+    	
     }
     
     

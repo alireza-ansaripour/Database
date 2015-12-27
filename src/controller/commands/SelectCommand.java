@@ -1,6 +1,9 @@
 package controller.commands;
 
 import java.util.regex.Pattern;
+
+import model.C1Constrain;
+import model.C2Constrain;
 import model.TableManager;
 import controller.ClauseNode;
 import controller.InputHandler;
@@ -12,7 +15,7 @@ public class SelectCommand extends Command{
 	private String[][] actionResult;
 	
 	@Override
-	public boolean doAction(String command) throws InvalidParam {
+	public boolean doAction(String command) throws InvalidParam,C1Constrain,C2Constrain {
 		
 		if(command.startsWith("SELECT")==false){
 			return false;

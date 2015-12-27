@@ -177,6 +177,7 @@ public class Table {
         
         for (int i = 0; i < values.length; i++) {
             record.addValues(columns[i], values[i]);
+//            System.out.println("ADD VALUES");
         }
         
         // checking c1
@@ -199,6 +200,8 @@ public class Table {
         		throw new C2Constrain();
         }
         
+        
+        
         for(Map.Entry<String, TreeMap<String, ArrayList<Record>> > e:treePair.entrySet()){
         	TreeMap<String, ArrayList<Record>> indexes = e.getValue();
         	String indexValue = record.returnValues().get(e.getKey());
@@ -212,14 +215,12 @@ public class Table {
             }
         }
         // sets the next and before of the record
-        System.err.println(head.getValue(primaryKey));
         head.setNext(record);
         record.setBefore(head);
         head = record; // update the head
-        System.err.println(head.getValue(primaryKey));
         
     }
-
+    
     
     
     /**
@@ -228,14 +229,10 @@ public class Table {
      * @return an ArrayList of satisfied records. 
      */
     public Record[] getRecords(ClauseNode condition){
-        
-    	
     	ArrayList<Record> result=new ArrayList<>();
         Record record = root.getNext();
+        
         while (record != null){
-        	
-            
-        	System.err.println(record.getValue(primaryKey));
         	String[] values = new String[columns.length];
             HashMap<String, Integer> column=new HashMap<String, Integer>();
             for (int j = 0; j < columns.length; j++) {
@@ -274,11 +271,12 @@ public class Table {
      * @param newValue		new value to update. can be compute value.
      * @param condition		gets records by this condition.
      * @throws InvalidRecord 
+     * @throws C2Constrain  if onDelete is false
      * @throws C1Constrain  if another record is with that pk  
-     * @throws FKConstrain  if onDelete is false
      */
-    public void updateRecords(String columnName,String newValue,ClauseNode condition) throws InvalidRecord, C2Constrain, C1Constrain, FKConstrain  {
-    	// if the onUpdate is false then this method will throw an exception
+    public void updateRecords(String columnName,String newValue,ClauseNode condition)
+    		throws InvalidRecord, C2Constrain, C1Constrain, FKConstrain  {
+    	// if the onDelete is false then this method will throw an exception
     	if(columnName.equals(primaryKey))
     		if (!onUpdate)
     			throw new FKConstrain();
@@ -300,7 +298,13 @@ public class Table {
         		if(records2 != null && records2.size() != 0)
         			throw new C1Constrain();
     		}
+    		
+    		
     		// it should check all the referenced table 
+    		//TODO : for each record we must check whether referenced table has that pk or not
+    		
+    		
+    		
     		for(Map.Entry<Table, String> e: foreignKeys.entrySet()){
             	Table table = e.getKey();
             	String column = e.getValue();
@@ -312,6 +316,9 @@ public class Table {
             	}
             	
             }
+    		
+    		
+    		
     		if (indexes.contains(columnName)){ // if the update is on a column name
     			ArrayList<Record> r = returnOnIndex(columnName, records[i].getValue(columnName));
     			r.remove(records[i]);
@@ -328,9 +335,6 @@ public class Table {
 				table.updateByForeignKey(this, records[i].getValue(primaryKey));
 			}
     	}
-    	
-    	
-    	
     	
     }
     
@@ -349,6 +353,7 @@ public class Table {
     	Record[] records=this.getRecords(condition);
     	result=new String[records.length][variableNames.length];
     	
+//    	this.print();
     	
     	for(int i=0;i<result.length;i++){
     		for(int j=0;j<result[0].length;j++){
@@ -365,11 +370,13 @@ public class Table {
     /**
      * gets a ClauseNode as condition then removes all of satisfied record with that condition.
      * @param condition	a ClauseNode that its function satisfies records to delete.
-     * @throws C2Constrain if the onDelete is false
+     * @throws InvalidRecord 
      */
-    public void removeRecords(ClauseNode condition) throws  C2Constrain{
-    	if(!onDelete)
+    public void removeRecords(ClauseNode condition) throws InvalidRecord,C2Constrain{
+    	
+    	if(!onDelete){
     		throw new C2Constrain();
+    	}
         Record record = root.getNext();
         while (record != null){
             String[] values = new String[columns.length];
@@ -412,6 +419,7 @@ public class Table {
         }
 
     }
+    
     /**
      * when the onDelete is cascade the referenced table removes the records
      * @param t	     :The referenced table
@@ -437,6 +445,7 @@ public class Table {
 			}
 		}
     }
+    
     /**
      * like deleteOnFK
      * @param t     :the ref table	
@@ -456,6 +465,8 @@ public class Table {
      * @return an ArrayList of record with this index.
      */
     public ArrayList<Record> returnOnIndex(String index,String value){
+    	
+    	
     	TreeMap<String, ArrayList<Record>> indexes = treePair.get(index);
     	if (value == null)
     		return null;
@@ -609,8 +620,20 @@ public class Table {
     }
     
     
-    
-    
+//    public void print(){
+//    	System.out.println("print *******************************");
+//        for(Map.Entry<String, TreeMap<String, ArrayList<Record>>> e:treePair.entrySet()){
+//        	
+//        	TreeMap<String, ArrayList<Record>> index=e.getValue();
+//        	for(Map.Entry<String,ArrayList<Record>> r:index.entrySet()){
+//        		ArrayList<Record> rec=r.getValue();
+//        		for(int i=0;i<rec.size();i++){
+//        			System.out.println(rec.get(i));
+//        		}
+//        	}
+//        	
+//        }
+//    }
     
     
 }

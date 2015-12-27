@@ -2,6 +2,8 @@ package controller.commands;
 
 import java.util.regex.Pattern;
 
+import model.C1Constrain;
+import model.C2Constrain;
 import model.TableManager;
 import controller.ClauseNode;
 import controller.InputHandler;
@@ -10,7 +12,7 @@ import controller.InvalidParam;
 public class DeleteCommand extends Command{
 
 	@Override
-	public boolean doAction(String command) throws InvalidParam {
+	public boolean doAction(String command) throws InvalidParam,C1Constrain,C2Constrain {
 		
 		if(command.startsWith("DELETE")==false){
 			return false;
