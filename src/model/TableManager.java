@@ -253,10 +253,6 @@ public class TableManager {
 	
 	
 	
-//	public static void updateRecords(String tableName,String columnName,String newValue,ClauseNode condition){
-//		Table table=tables.get(tableName);
-//		table.updateRecords(columnName, newValue, condition);
-//	}
 	
 	
 	public static void updateRecords(String tableName,String columnName,String newValue,ClauseNode condition)
