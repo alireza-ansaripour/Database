@@ -177,6 +177,7 @@ public class Table {
         
         for (int i = 0; i < values.length; i++) {
             record.addValues(columns[i], values[i]);
+//            System.out.println("ADD VALUES");
         }
         
         // checking c1
@@ -199,6 +200,8 @@ public class Table {
         		throw new C2Constrain();
         }
         
+        
+        
         for(Map.Entry<String, TreeMap<String, ArrayList<Record>> > e:treePair.entrySet()){
         	TreeMap<String, ArrayList<Record>> indexes = e.getValue();
         	String indexValue = record.returnValues().get(e.getKey());
@@ -217,7 +220,7 @@ public class Table {
         head = record; // update the head
         
     }
-
+    
     
     
     /**
@@ -226,9 +229,29 @@ public class Table {
      * @return an ArrayList of satisfied records. 
      */
     public Record[] getRecords(ClauseNode condition){
+<<<<<<< HEAD
+        try {
+			String[] parts = condition.getVariable();
+			
+			String temp = InputHandler.getValue(parts[1],null, null);
+			if (treePair.containsKey(parts[0])){
+				if(parts[2].equals("=")){
+					ArrayList<Record>records = returnOnIndex(parts[0], temp);
+					Record[] res = new Record[records.size()];
+					records.toArray(res);
+					return res;
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("SFDF");
+		}
         
+    	
+=======
+>>>>>>> ad490717e080c451164ce2a19daccfec1d156538
     	ArrayList<Record> result=new ArrayList<>();
         Record record = root.getNext();
+        
         while (record != null){
         	String[] values = new String[columns.length];
             HashMap<String, Integer> column=new HashMap<String, Integer>();
@@ -265,11 +288,12 @@ public class Table {
      * @param newValue		new value to update. can be compute value.
      * @param condition		gets records by this condition.
      * @throws InvalidRecord 
+     * @throws C2Constrain  if onDelete is false
      * @throws C1Constrain  if another record is with that pk  
-     * @throws FKConstrain  if onDelete is false
      */
-    public void updateRecords(String columnName,String newValue,ClauseNode condition) throws InvalidRecord, C2Constrain, C1Constrain, FKConstrain  {
-    	// if the onUpdate is false then this method will throw an exception
+    public void updateRecords(String columnName,String newValue,ClauseNode condition)
+    		throws InvalidRecord, C2Constrain, C1Constrain, FKConstrain  {
+    	// if the onDelete is false then this method will throw an exception
     	if(columnName.equals(primaryKey))
     		if (!onUpdate)
     			throw new FKConstrain();
@@ -291,7 +315,13 @@ public class Table {
         		if(records2 != null && records2.size() != 0)
         			throw new C1Constrain();
     		}
+    		
+    		
     		// it should check all the referenced table 
+    		//TODO : for each record we must check whether referenced table has that pk or not
+    		
+    		
+    		
     		for(Map.Entry<Table, String> e: foreignKeys.entrySet()){
             	Table table = e.getKey();
             	String column = e.getValue();
@@ -303,6 +333,9 @@ public class Table {
             	}
             	
             }
+    		
+    		
+    		
     		if (indexes.contains(columnName)){ // if the update is on a column name
     			ArrayList<Record> r = returnOnIndex(columnName, records[i].getValue(columnName));
     			r.remove(records[i]);
@@ -314,14 +347,11 @@ public class Table {
     			}
     			r2.add(records[i]);
     		}
+    		records[i].update(columnName, temp);
     		for (Table table : refrences) {
 				table.updateByForeignKey(this, records[i].getValue(primaryKey));
 			}
-    		records[i].update(columnName, temp);
     	}
-    	
-    	
-    	
     	
     }
     
@@ -340,6 +370,7 @@ public class Table {
     	Record[] records=this.getRecords(condition);
     	result=new String[records.length][variableNames.length];
     	
+//    	this.print();
     	
     	for(int i=0;i<result.length;i++){
     		for(int j=0;j<result[0].length;j++){
@@ -356,12 +387,21 @@ public class Table {
     /**
      * gets a ClauseNode as condition then removes all of satisfied record with that condition.
      * @param condition	a ClauseNode that its function satisfies records to delete.
+<<<<<<< HEAD
      * @throws C2Constrain if the onDelete is false
      * @throws FKConstrain 
      */
     public void removeRecords(ClauseNode condition) throws  C2Constrain, FKConstrain{
     	if(!onDelete)
-    		throw new FKConstrain();
+=======
+     * @throws InvalidRecord 
+     */
+    public void removeRecords(ClauseNode condition) throws InvalidRecord,C2Constrain{
+    	
+    	if(!onDelete){
+>>>>>>> ad490717e080c451164ce2a19daccfec1d156538
+    		throw new C2Constrain();
+    	}
         Record record = root.getNext();
         while (record != null){
             String[] values = new String[columns.length];
@@ -380,9 +420,6 @@ public class Table {
             }
             Record next = record.getNext();
             if (check==true) { // the data should be deleted
-            	for (Table table : refrences) {
-					table.removeByForeignKey(this, record.getValue(primaryKey));
-				}
             	for(Map.Entry<String, TreeMap<String, ArrayList<Record>> > e:treePair.entrySet()){
                 	String indexValue = record.returnValues().get(e.getKey());
                 	try{
@@ -392,6 +429,11 @@ public class Table {
                 		System.err.println(ex.getMessage());
                 	}
                 }
+            	for (Table table : refrences) {
+					table.removeByForeignKey(this, record.getValue(primaryKey));
+				}
+            	
+            	
             	if(next == null){
             		head = record.getBefore();
             	}else{
@@ -405,6 +447,7 @@ public class Table {
         }
 
     }
+    
     /**
      * when the onDelete is cascade the referenced table removes the records
      * @param t	     :The referenced table
@@ -426,11 +469,9 @@ public class Table {
 				if(record.getValue(primaryKey)!=null){
 					String val = record.getValue(primaryKey);
 					for (Table table : refrences) {
-						table.removeByForeignKey(table, value);
+						table.removeByForeignKey(this, val);
 					}
 				}
-				
-				
 				Record next = record.getNext();
 				Record before = record.getBefore();
 				if(next != null)
@@ -441,15 +482,13 @@ public class Table {
 			}
 		}
     }
+    
     /**
      * like deleteOnFK
      * @param t     :the ref table	
      * @param value : the value to be deleted
-     * @throws FKConstrain 
      */
-    private void updateByForeignKey(Table t,String value) throws FKConstrain{
-    	if (!onUpdate)
-    		throw new FKConstrain();
+    private void updateByForeignKey(Table t,String value){
     	String key = foreignKeys.get(t);
     	Record[] records = getAllRecords();
     	for (Record record : records) {
@@ -463,6 +502,8 @@ public class Table {
      * @return an ArrayList of record with this index.
      */
     public ArrayList<Record> returnOnIndex(String index,String value){
+    	
+    	
     	TreeMap<String, ArrayList<Record>> indexes = treePair.get(index);
     	if (value == null)
     		return null;
@@ -605,41 +646,6 @@ public class Table {
 		}	
     	return dest;
     }
-    /**
-     * groups the table according to given variables
-     * @param vars	columns name for groupBy
-     * @return	returns a 2D array of records and the records like them
-     */
-    public ArrayList<Record[]> groupBy(String[] vars){
-    	LinkedList<Record>records = new LinkedList<Record>();
-    	ArrayList<Record[]>answer = new ArrayList<Record[]>();
-    	Record record = this.root.getNext();
-    	while(record != null){ // puts all the records in the linkedList
-    		records.add(record);
-    		record = record.getNext();
-    	}
-    	while(records.size() > 0){
-    		ArrayList<Record>sameRecords = new ArrayList<Record>();
-    		Record record2 = records.get(0); 
-    		for (int i = 0; i < records.size();) { // each time it iterates over the linkeList and finds the same records
-				boolean toAdd = true;
-    			for (int j = 0; j < vars.length; j++) { // checks if all the given columns are the same or not
-					if (! record2.getValue(vars[j]).equals(records.get(i).getValue(vars[j]))){
-						toAdd = false;
-						break;
-					}
-				}
-    			if(toAdd){ // if the record is the same it adds it to the ArrayList 
-    				sameRecords.add(records.get(i));
-    				records.remove(records.get(i));
-    			}else{
-    				i++;
-    			}
-			}
-    		answer.add(sameRecords.toArray(new Record[sameRecords.size()]));
-    	}	
-    	return answer;
-    }
     
     
     
@@ -651,8 +657,20 @@ public class Table {
     }
     
     
-    
-    
+//    public void print(){
+//    	System.out.println("print *******************************");
+//        for(Map.Entry<String, TreeMap<String, ArrayList<Record>>> e:treePair.entrySet()){
+//        	
+//        	TreeMap<String, ArrayList<Record>> index=e.getValue();
+//        	for(Map.Entry<String,ArrayList<Record>> r:index.entrySet()){
+//        		ArrayList<Record> rec=r.getValue();
+//        		for(int i=0;i<rec.size();i++){
+//        			System.out.println(rec.get(i));
+//        		}
+//        	}
+//        	
+//        }
+//    }
     
     
 }

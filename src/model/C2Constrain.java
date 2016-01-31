@@ -1,5 +1,5 @@
 package model;
 
-public class C2Constrain extends Exception {
+public class C2Constrain extends Exception{
 
 }

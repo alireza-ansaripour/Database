@@ -2,6 +2,10 @@ package controller.commands;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import model.C1Constrain;
+import model.C2Constrain;
+import model.FKConstrain;
 import controller.InvalidParam;
 
 /**
@@ -25,7 +29,7 @@ public abstract class Command {
 	 * @return if command is relative to its action first does action then returns true else returns false.
 	 * @throws InvalidParam if this command is relative to its action but is incompatible with its form.
 	 */
-	public abstract boolean doAction(String command)throws InvalidParam;
+	public abstract boolean doAction(String command)throws InvalidParam,C1Constrain,C2Constrain,FKConstrain;
 	
 	
 	/**

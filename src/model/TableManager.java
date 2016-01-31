@@ -1,11 +1,8 @@
 package model;
 
-import java.security.InvalidParameterException;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-
 import controller.ClauseNode;
 import controller.InvalidParam;
 
@@ -102,6 +99,7 @@ public class TableManager {
 					
 					table.addForeignKey(fkTable, fKeyName, onDelete, onUpdate);
 					copy=matcher.group(5);
+					
 				}
 				else{
 					throw new InvalidParam();
@@ -151,33 +149,97 @@ public class TableManager {
 	
 	
 	
+	
+	
+	
 	public static String[][] select(String tableName,String[] variables,ClauseNode condition){
 		Table table;
 		
+		boolean MorJ=true;
+		
+		Table[] tablesArray=null;
 		if(tableName.contains(",")==true){
 			String[] temp=tableName.split(",");
+			tablesArray=new Table[temp.length];
+			
 			table=tables.get(temp[0]);
+			tablesArray[0]=table;
+			
+			Table tempTable;
 			for(int i=1;i<temp.length;i++){
+				tempTable=tables.get(temp[i]);
 				table=table.times(tables.get(temp[i]));
+				tablesArray[i]=tempTable;
 			}
 		}
 		else if(tableName.contains("JOIN")==true){
 			String[] temp=tableName.split(" JOIN ");
+			tablesArray=new Table[temp.length];
+			
 			table=tables.get(temp[0]);
+			tablesArray[0]=table;
+			
+			Table tempTable;
 			for(int i=1;i<temp.length;i++){
+				tempTable=tables.get(temp[i]);
 				table=table.join(tables.get(temp[i]));
+				tablesArray[i]=tempTable;
 			}
 		}
 		else{
+			MorJ=false;
 			table=tables.get(tableName);
 		}
 		
+		String[] newVar=variables;
+		if(MorJ==true){
+			int index=0;
+			int[] indexes=new int[variables.length];
+			String[] array=new String[variables.length];
+			for(int i=0;i<variables.length;i++){
+				if(variables[i].contains(".")!=true){
+					array[index]=variables[i];
+					indexes[index]=i;
+					index++;
+				}
+			}
+			
+			String[] dotLess=new String[index];
+			for(int i=0;i<index;i++){
+				dotLess[i]=array[i];
+			}
+			
+			dotLess=refreshNames(tablesArray, dotLess);
+			
+			for(int i=0;i<index;i++){
+				newVar[indexes[i]]=dotLess[i];
+			}
+		}
 		
-		String[][] result=table.select(variables, condition);
-		
+		String[][] result=table.select(newVar, condition);
 		
 		return result;
 	}
+	
+	
+	
+	
+	private static String[] refreshNames(Table[] tables,String[] variables){
+		
+		for(int i=0;i<tables.length;i++){
+			for(int j=0;j<variables.length;j++){
+				for(int k=0;k<tables[i].columns.length;k++){
+					if(tables[i].columns[k].equals(variables[j])){
+						variables[j]=tables[i].name+"."+variables[j];
+					}
+				}
+			}
+		}
+		
+		return variables;
+	}
+	
+	
 	
 	
 	
@@ -197,7 +259,9 @@ public class TableManager {
 //	}
 	
 	
-	public static void updateRecords(String tableName,String columnName,String newValue,ClauseNode condition){
+	public static void updateRecords(String tableName,String columnName,String newValue,ClauseNode condition)
+				throws C1Constrain,C2Constrain,FKConstrain
+	{
 		Table table=tables.get(tableName);
 		try {
 			table.updateRecords(columnName, newValue, condition);
@@ -209,30 +273,38 @@ public class TableManager {
 		} catch (C1Constrain e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (FKConstrain e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 	}
 	
 	
 	
-	public static void addRecord(String tableName,String[] variables) throws InvalidParam{
+//	public static void addRecord(String tableName,String[] variables) throws InvalidParam{
+//		
+//		Table table=tables.get(tableName);
+//		try {
+//			table.addRecord(variables);
+//		} catch (InvalidRecord e) {
+//			throw new InvalidParam();
+//		}
+//		
+//	}
+	
+	
+	
+	
+	public static void addRecord(String tableName,String[] variables)
+			throws InvalidParam,C1Constrain,C2Constrain{
 		
 		Table table=tables.get(tableName);
 		try {
 			table.addRecord(variables);
 		} catch (InvalidRecord e) {
 			throw new InvalidParam();
-		} catch (C1Constrain e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (C2Constrain e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		
 	}
+	
+	
 	
 	
 	
@@ -246,18 +318,11 @@ public class TableManager {
 	
 	
 	
-	public static void removeRecords(String tableName,ClauseNode condition){
+	public static void removeRecords(String tableName,ClauseNode condition)throws C2Constrain, FKConstrain{
 		
 		Table table=tables.get(tableName);
-		try {
 			table.removeRecords(condition);
-		} catch (C2Constrain e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (FKConstrain e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 		
 	}
 	

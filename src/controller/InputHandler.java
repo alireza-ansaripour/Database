@@ -618,7 +618,15 @@ public class InputHandler {
 	
 	
 	
-	
+	public static void print(String[][] array,String string){
+		for(int i=0;i<array.length;i++){
+			System.out.print(string+" ");
+			for(int j=0;j<array[0].length;j++){
+				System.out.print(array[i][j]+" ");
+			}
+			System.out.println();
+		}
+	}
 	
 	
 	

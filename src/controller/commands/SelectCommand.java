@@ -1,6 +1,9 @@
 package controller.commands;
 
 import java.util.regex.Pattern;
+
+import model.C1Constrain;
+import model.C2Constrain;
 import model.TableManager;
 import controller.ClauseNode;
 import controller.InputHandler;
@@ -12,7 +15,7 @@ public class SelectCommand extends Command{
 	private String[][] actionResult;
 	
 	@Override
-	public boolean doAction(String command) throws InvalidParam {
+	public boolean doAction(String command) throws InvalidParam,C1Constrain,C2Constrain {
 		
 		if(command.startsWith("SELECT")==false){
 			return false;
@@ -74,9 +77,17 @@ public class SelectCommand extends Command{
 			return;
 		}
 		
-		String temp=selectedVariables[0];
-		for(int i=1;i<selectedVariables.length;i++){
-			temp+=","+selectedVariables[i];
+		String temp="";
+		for(int i=0;i<selectedVariables.length;i++){
+			String[] parts = selectedVariables[i].split(".");
+			System.err.println();
+			if (i == 0){
+				temp += selectedVariables[i].substring(selectedVariables[i].indexOf(".")+1);				
+			}
+			else{
+					temp += ","+selectedVariables[i].substring(selectedVariables[i].indexOf(".")+1);
+			}
+			
 		}
 		System.out.println(temp);
 		for(int i=0;i<actionResult.length;i++){
