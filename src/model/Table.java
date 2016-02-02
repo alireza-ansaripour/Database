@@ -226,10 +226,9 @@ public class Table {
      * @return an ArrayList of satisfied records. 
      */
     public Record[] getRecords(ClauseNode condition){
-        
     	ArrayList<Record> result=new ArrayList<>();
-        Record record = root.getNext();
-        while (record != null){
+        Record[] records = getAllRecords();
+        for (Record record : records) {
         	String[] values = new String[columns.length];
             HashMap<String, Integer> column=new HashMap<String, Integer>();
             for (int j = 0; j < columns.length; j++) {
@@ -248,10 +247,7 @@ public class Table {
             if (check==true) { // if the record satisfies the condition
                 result.add(record);
             }
-            
-            record = record.getNext();
-        }
-        
+		}
         Record[] res=new Record[result.size()];
         return result.toArray(res);
     }
@@ -613,11 +609,10 @@ public class Table {
     public ArrayList<Record[]> groupBy(String[] vars){
     	LinkedList<Record>records = new LinkedList<Record>();
     	ArrayList<Record[]>answer = new ArrayList<Record[]>();
-    	Record record = this.root.getNext();
-    	while(record != null){ // puts all the records in the linkedList
-    		records.add(record);
-    		record = record.getNext();
-    	}
+    	Record[] allRecords = getAllRecords();
+    	for (Record record : allRecords) {
+			records.add(record);
+		}
     	while(records.size() > 0){
     		ArrayList<Record>sameRecords = new ArrayList<Record>();
     		Record record2 = records.get(0); 
@@ -650,6 +645,32 @@ public class Table {
     	return false;
     }
     
+    
+    public static void main(String[] args) {
+		Table t = new Table("ali", new String[]{"1","2","3"});
+		try {
+			t.addRecord(new String[]{"1","2","3"});
+			t.addRecord(new String[]{"1","3","4"});
+			t.addRecord(new String[]{"2","3","4"});
+			t.addRecord(new String[]{"2","3","4"});
+		} catch (InvalidRecord e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (C1Constrain e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (C2Constrain e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		ArrayList<Record[]>ans = t.groupBy(new String[]{"1","3"});
+		for (Record[] records : ans) {
+			for (Record record : records) {
+				System.out.print(record+" ");
+			}
+			System.out.println("");
+		}
+	}
     
     
     

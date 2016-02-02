@@ -65,8 +65,23 @@ public class SelectCommand extends Command{
 			throw new InvalidParam();
 		}
 	}
-	
-	
+	/**
+	 * created by alireza
+	 * this method will return all the record resulting from the select command
+	 * this method is used for views
+	 * @param command	the input command
+	 * @return the list of records
+	 * @throws InvalidParam
+	 * @throws C1Constrain
+	 * @throws C2Constrain
+	 */
+	public String[][] returnResult(String command) throws InvalidParam, C1Constrain, C2Constrain{
+		doAction(command);
+		return actionResult;
+	}
+	public String[] getHeaders(){
+		return selectedVariables;
+	}
 	
 	
 	@Override
