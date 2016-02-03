@@ -551,6 +551,7 @@ public class Table {
     		return table.join(this);
     	String tableName = table.getName();
     	Record[] firstTableRecords = getAllRecords();
+    	
     	String[] tableHeaders = table.getHeaders();
     	String[] destTableHeader = new String[tableHeaders.length+columns.length];
     	String[] copy = new String[destTableHeader.length];
