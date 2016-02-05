@@ -197,8 +197,7 @@ public class ClauseNode {
 	public ClauseNode(String condition,boolean havingCondition){
 		
 		
-		
-		String matchingString="([A-Za-z]*)\\s+(.*)\\s+(.*)\\s*";
+		String matchingString="\\s*([A-Za-z]*)\\s+([A-Za-z]*)\\s+(.*)\\s*";
 		Pattern pattern=Pattern.compile(matchingString);
 		Matcher matcher=pattern.matcher(condition);
 		
@@ -212,6 +211,8 @@ public class ClauseNode {
 					break;
 				}
 			}
+			
+			
 			
 			this.aggregationVariable=matcher.group(2);
 			
@@ -241,13 +242,20 @@ public class ClauseNode {
 				operatorLength=1;
 			}
 			
+			
+			
 			for(;;operatorLength++){
 				if(operatorAndValue.charAt(operatorLength)!=' '){
 					break;
 				}
 			}
 			
-			String val=operatorAndValue.substring(operatorLength,operatorAndValue.length());
+			int lastSpace=operatorAndValue.length()-1;
+			for(;operatorAndValue.charAt(lastSpace)==' ';lastSpace--){
+				
+			}
+			
+			String val=operatorAndValue.substring(operatorLength,lastSpace+1);
 			this.aggregationValue=Integer.parseInt(val);
 		}
 		
@@ -255,9 +263,6 @@ public class ClauseNode {
 		this.isConst=false;
 		
 		
-		System.out.println("aggFunc: "+this.aggregationFunction);
-		System.out.println("aggvariable: "+this.aggregationVariable);
-		System.out.println("aggvalue: "+this.aggregationValue);
 		
 		
 		
@@ -473,6 +478,13 @@ public class ClauseNode {
 			System.out.println();
 		}
 		
+		System.out.println("begin");
+		System.out.println("aggFunc: "+this.aggregationFunction);
+		System.out.println("aggVari: "+this.aggregationVariable);
+		System.out.println("aggVal: "+this.aggregationValue);
+		System.out.println("single: "+this.singleOperator);
+		System.out.println("after");
+		
 		
 		boolean result = false;
 		
@@ -499,6 +511,7 @@ public class ClauseNode {
 						calculateValue=temp;
 					}
 				}
+				System.out.println("cal: "+calculateValue);
 			}
 			//MIN.
 			else if(this.aggregationFunction==1){
@@ -534,11 +547,11 @@ public class ClauseNode {
 			
 			
 			//>
-			if(this.singleOperator==0&&calculateValue>this.aggregationValue){
+			if(this.singleOperator==4&&calculateValue>this.aggregationValue){
 				result=true;
 			}
 			//>=
-			else if(this.singleOperator==1&&calculateValue>=this.aggregationValue){
+			else if(this.singleOperator==3&&calculateValue>=this.aggregationValue){
 				result=true;
 			}
 			//==
@@ -546,11 +559,11 @@ public class ClauseNode {
 				result=true;
 			}
 			//<=
-			else if(this.singleOperator==3&&calculateValue<=this.aggregationValue){
+			else if(this.singleOperator==1&&calculateValue<=this.aggregationValue){
 				result=true;
 			}
 			//<
-			else if(this.singleOperator==4&&calculateValue<this.aggregationValue){
+			else if(this.singleOperator==0&&calculateValue<this.aggregationValue){
 				result=true;
 			}
 			else{

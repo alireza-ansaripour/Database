@@ -660,12 +660,24 @@ public class InputHandler {
 				}
 			}
 			
+			
 			for(int i=0;i<operators.length;i++){
 				temp=copy.indexOf(operators[i], 1);
-				if(temp!=-1&&secondIndex>temp){
+				if(temp!=-1&&(secondIndex>temp||secondIndex==0)){
 					secondIndex=temp;
 					firstFunction=false;
 				}
+			}
+			
+			if(copy.length()==0){
+				break;
+			}
+			
+			if(firstFunction==false){
+				String clauseString=copy.substring(0,secondIndex);
+				copy=copy.substring(secondIndex,copy.length());
+				ClauseNode node=new ClauseNode(clauseString,true);
+				stack.push(node);
 			}
 			
 			if(secondIndex==0){
@@ -687,6 +699,8 @@ public class InputHandler {
 				if(copy.charAt(0)=='!'){
 					clauseNode=stack.pop();
 					clauseNode.inverseSign();
+					stack.push(clauseNode);
+					copy=copy.substring(1, copy.length());
 				}
 				else{
 					int operator=0;
@@ -725,7 +739,7 @@ public class InputHandler {
 	 */
 	private static String havingConditionToPostfix(String condition){
 		
-		String copy=condition;
+		String copy=condition+" ";
 		copy=copy.replace("(", " ( ");
 		copy=copy.replace(")", " ) ");
 		
@@ -736,9 +750,12 @@ public class InputHandler {
 		InToPost post=new InToPost(copy);
 		copy=post.doTrans();
 		
-		copy=copy.replace(" 0 ", " ");
+		
+		
+		copy=copy.replace("0", " ");
 		
 		String[] functions={"MAX","MIN","AVE","SUM"};
+		
 		
 		return copy;
 		
