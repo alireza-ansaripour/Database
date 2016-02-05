@@ -1,6 +1,8 @@
 package controller;
 
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import controller.commands.OrException;
 
@@ -14,7 +16,12 @@ public class ClauseNode {
 	private ClauseNode leftNode;
 	private ClauseNode rightNode;
 	
+	private int aggregationFunction;//0:MAX, 1:MIN, 2:SUM, 3:AVE.
+	private String aggregationVariable;//a variable name like MAX(aggregationVariable).
+	private int aggregationValue;//value of aggregation function.
+	
 	private int singleOperator;//4:> ,3:>= ,2:= ,1:<= ,1:< .this Node must be leaf.
+	
 	private String variableName;//if this Node is a leaf must has an operand.
 	private String variableValue;//if this Node is a leaf its variable must has a value. 
 	public boolean not = false;//if this Node is a leaf can has a not operator.if true its operator is != else =. 
@@ -119,6 +126,8 @@ public class ClauseNode {
 	
 	
 	
+	
+	
 	/**
 	 * this constructor is used when all operator in WHERE clause are AND and there is no constant 
 	 * or OR operator.
@@ -178,6 +187,87 @@ public class ClauseNode {
 	
 	
 	
+	
+	/**
+	 * constructor just used for having condition.
+	 * @param condition single aggregation condition like "MAX(id)>12" or "MIN ( id) <= 10".
+	 * @param havingCondition it is not important.
+	 * @throws InvalidParam if condition does not match condition string.
+	 */
+	public ClauseNode(String condition,boolean havingCondition){
+		
+		
+		
+		String matchingString="([A-Za-z]*)\\s+(.*)\\s+(.*)\\s*";
+		Pattern pattern=Pattern.compile(matchingString);
+		Matcher matcher=pattern.matcher(condition);
+		
+		if(matcher.find()==true){
+			String[] functions={"MAX","MIN","SUM","AVE"};
+			boolean founded=false;
+			for(int i=0;i<functions.length;i++){
+				if(matcher.group(1).equals(functions[i])){
+					this.aggregationFunction=i;
+					founded=true;
+					break;
+				}
+			}
+			
+			this.aggregationVariable=matcher.group(2);
+			
+			
+			int operatorLength;
+			String operatorAndValue=matcher.group(3);
+			//4:>, 3:>=, 2:=, 1:<=, 0:<.
+			if(operatorAndValue.startsWith(">=")==true){
+				this.singleOperator=3;
+				operatorLength=2;
+			}
+			else if(operatorAndValue.startsWith("<=")==true){
+				this.singleOperator=1;
+				operatorLength=2;
+			}
+			else if(operatorAndValue.startsWith(">")==true){
+				this.singleOperator=4;
+				operatorLength=1;
+			}
+			else if(operatorAndValue.startsWith("=")==true){
+				this.singleOperator=2;
+				operatorLength=1;
+			}
+			//<
+			else{
+				this.singleOperator=0;
+				operatorLength=1;
+			}
+			
+			for(;;operatorLength++){
+				if(operatorAndValue.charAt(operatorLength)!=' '){
+					break;
+				}
+			}
+			
+			String val=operatorAndValue.substring(operatorLength,operatorAndValue.length());
+			this.aggregationValue=Integer.parseInt(val);
+		}
+		
+		this.isLeaf=true;
+		this.isConst=false;
+		
+		
+		System.out.println("aggFunc: "+this.aggregationFunction);
+		System.out.println("aggvariable: "+this.aggregationVariable);
+		System.out.println("aggvalue: "+this.aggregationValue);
+		
+		
+		
+	}
+	
+	
+	
+	
+	
+	
 	/**
 	 * gets two ClauseNode and set them to this object. used for ClauseNode that has a compare operator.
 	 * @param	rightNode	one of the ClauseNode objects.
@@ -205,7 +295,8 @@ public class ClauseNode {
 	 * @param	values		row of a table that is values of a record.
 	 * 
 	 */
-	public boolean checkCondition(HashMap<String,Integer> columnNames,String[] values)throws Exception,NoVariable{
+	public boolean checkCondition(HashMap<String,Integer> columnNames,String[] values)
+			throws Exception,NoVariable{
 		
 		
 		if(this.isLeaf==true){
@@ -355,7 +446,6 @@ public class ClauseNode {
 					}
 				}
 				
-				
 			}
 			
 		}
@@ -367,7 +457,135 @@ public class ClauseNode {
 	
 	
 	
+	/**
+	 * gets values and names of a group of variables then checks this clauseNode condition is valid 
+	 * on this group of variables.
+	 * @param values values of this variable group. order of this variables must be same by order of names.
+	 * @param names names of this variable group.
+	 * @return if this condition is satisfied by this variable group returns true else returns false.
+	 */
+	public boolean checkAggregationCondition(String[][] values,String[] names){
 		
+		for(int i=0;i<values.length;i++){
+			for(int j=0;j<values[0].length;j++){
+				System.out.print(values[i][j]+" ");
+			}
+			System.out.println();
+		}
+		
+		
+		boolean result = false;
+		
+		//if this clauseNode does not contains AND, OR.
+		if(this.isLeaf==true){
+			int variableIndex=0;
+			for(int i=0;i<names.length;i++){
+				if(names[i].equals(this.aggregationVariable)){
+					variableIndex=i;
+					break;
+				}
+			}
+			
+			
+			int calculateValue=0;
+			
+			//MAX.
+			if(this.aggregationFunction==0){
+				calculateValue=Integer.parseInt(values[0][variableIndex]);
+				int temp=0;
+				for(int i=0;i<values.length;i++){
+					temp=Integer.parseInt(values[i][variableIndex]);
+					if(calculateValue<temp){
+						calculateValue=temp;
+					}
+				}
+			}
+			//MIN.
+			else if(this.aggregationFunction==1){
+				calculateValue=Integer.parseInt(values[0][variableIndex]);
+				int temp=0;
+				for(int i=0;i<values.length;i++){
+					temp=Integer.parseInt(values[i][variableIndex]);
+					if(temp<calculateValue){
+						calculateValue=temp;
+					}
+				}
+				
+			}
+			//SUM.
+			else if(this.aggregationFunction==2){
+				calculateValue=0;
+				int temp=0;
+				for(int i=0;i<values.length;i++){
+					temp=Integer.parseInt(values[i][variableIndex]);
+					calculateValue+=temp;
+				}
+			}
+			//AVE.
+			else{
+				calculateValue=0;
+				int temp=0;
+				for(int i=0;i<values.length;i++){
+					temp=Integer.parseInt(values[i][variableIndex]);
+					calculateValue+=temp;
+				}
+				calculateValue=calculateValue/values.length;
+			}
+			
+			
+			//>
+			if(this.singleOperator==0&&calculateValue>this.aggregationValue){
+				result=true;
+			}
+			//>=
+			else if(this.singleOperator==1&&calculateValue>=this.aggregationValue){
+				result=true;
+			}
+			//==
+			else if(this.singleOperator==2&&calculateValue==this.aggregationValue){
+				result=true;
+			}
+			//<=
+			else if(this.singleOperator==3&&calculateValue<=this.aggregationValue){
+				result=true;
+			}
+			//<
+			else if(this.singleOperator==4&&calculateValue<this.aggregationValue){
+				result=true;
+			}
+			else{
+				result=false;
+			}
+			
+		}
+		//this is not a leaf in condition tree. contains AND, OR.
+		else{
+			boolean right=this.rightNode.checkAggregationCondition(values, names);
+			boolean left=this.leftNode.checkAggregationCondition(values, names);
+			
+			//AND.
+			if(this.operator==0){
+				result=right&&left;
+			}
+			//OR.
+			else if(this.operator==1){
+				result=right||left;
+			}
+		}
+		
+		
+		if(this.not==false){
+			return result;
+		}
+		else{
+			return !result;
+		}
+	}
+	
+	
+	
+	
+	
 	
 	/**
 	 * before a condition is there is a NOT this function reverse its sign.

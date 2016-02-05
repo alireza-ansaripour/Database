@@ -1,5 +1,6 @@
 package controller.commands;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import model.C1Constrain;
@@ -30,11 +31,26 @@ public class SelectCommand extends Command{
 			selectedVariables[i]=components[i+2];
 		}
 		
+		String[][] components2=getGroupByComponents(condition);
+		String whereCondition=components2[0][0];
+		String[] groupVriables=components2[1];
+		String havingCondition=components2[2][0];
 		
+		ClauseNode whereNode=InputHandler.createClauseTree(whereCondition);
+		ClauseNode havingNode=null;
+		if(havingCondition!=null){
+			havingNode=InputHandler.createHavingClauseNode(havingCondition);
+		}
 		
-		ClauseNode node=InputHandler.createClauseTree(condition);
-		
-		actionResult=TableManager.select(tableName, selectedVariables, node);
+		if(groupVriables[0]!=null){
+			actionResult=TableManager.selectGroup(tableName, selectedVariables,groupVriables,
+					whereNode, havingNode);
+			System.out.println("group");
+		}
+		else{
+			actionResult=TableManager.select(tableName, selectedVariables, whereNode);
+			System.out.println("not");
+		}
 		
 		this.print();
 		
@@ -67,10 +83,72 @@ public class SelectCommand extends Command{
 	}
 	
 	
+	/**
+	 * gets a string as condition then first checks it contains "GROUP BY" or not.
+	 * if yes then checks it contains "HAVING" or not. if yes separates components of condition
+	 * and returns them. if not just separates WHERE condition and GROUP BY condition. 
+	 * @param condition a string that come after WHERE such as  WHERE condition, GROUP BY condition, 
+	 * HAVING condition.
+	 * @return array[][] first row is WHERE condition string, if condition contains GROUP BY second row is
+	 * name of variables in GROUP BY, if condition contains HAVING the first element of third row
+	 * is HAVING condition string.
+	 */
+	private String[][] getGroupByComponents(String condition){
+		String[][] result=new String[3][1];
+		String matchingString="(.*)\\s+GROUP BY\\s+(.*)";
+		Pattern groupPattern=Pattern.compile(matchingString);
+		Matcher groupMatcher=groupPattern.matcher(condition);
+		
+		if(groupMatcher.find()==true){
+			String whereCondition=groupMatcher.group(1);
+			result[0][0]=whereCondition;
+			
+			String havingString="(.*) HAVING (.*)";
+			Pattern havingPattern=Pattern.compile(havingString);
+			Matcher havingMatcher=havingPattern.matcher(groupMatcher.group(2));
+			
+			if(havingMatcher.find()==true){
+				result[2][0]=havingMatcher.group(2);
+				String columns=havingMatcher.group(1);
+				result[1]=columns.split(",");
+			}
+			else{
+				result[1]=groupMatcher.group(2).split(",");
+			}
+		}
+		else{
+			result[0][0]=condition;
+		}
+		
+		return result;
+		
+	}
+	
+	
+	
+	/**
+	 * created by alireza
+	 * this method will return all the record resulting from the select command
+	 * this method is used for views
+	 * @param command	the input command
+	 * @return the list of records
+	 * @throws InvalidParam
+	 * @throws C1Constrain
+	 * @throws C2Constrain
+	 */
+	public String[][] returnResult(String command) throws InvalidParam, C1Constrain, C2Constrain{
+		doAction(command);
+		return actionResult;
+	}
+	public String[] getHeaders(){
+		return selectedVariables;
+	}
+	
 	
 	
 	@Override
 	public void print() {
+		
 		
 		if(actionResult.length==0){
 			System.out.println("NO RESULTS");

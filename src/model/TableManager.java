@@ -1,10 +1,13 @@
 package model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+
 import controller.ClauseNode;
 import controller.InvalidParam;
+import controller.NoVariable;
 
 public class TableManager {
 	
@@ -12,13 +15,6 @@ public class TableManager {
 	private static HashMap<String, Table> tables=new HashMap<String, Table>();
 	
 	
-	/**
-	 * 
-	 * @param name
-	 * @param columnNames
-	 * @param types
-	 * @throws InvalidParam
-	 */
 	public static void createTable(String name,String[] columnNames,String[] types,String information)
 			throws InvalidParam{
 		
@@ -117,18 +113,6 @@ public class TableManager {
 			throw new InvalidParam();
 		}
 		
-//		System.out.println("primary key: "+table.primaryKey);
-//		for(Map.Entry<Table, String> pair:table.foreignKeys.entrySet()){
-//			System.out.println("foreignKey: "+pair.getKey().name+" "+pair.getValue().toString());
-//		}
-//		
-//		for(Map.Entry<Table, Boolean> pair:table.onDelete.entrySet()){
-//			System.out.println("onDelete: "+pair.getKey().name+" "+pair.getValue().toString());
-//		}
-//		
-//		for(Map.Entry<Table, Boolean> pair:table.onUpdate.entrySet()){
-//			System.out.println("onUpdate: "+pair.getKey().name+" "+pair.getValue().toString());
-//		}
 		
 		
 	}
@@ -148,6 +132,77 @@ public class TableManager {
 	}
 	
 	
+	
+	
+	public static String[][] selectGroup(String tableName,String[] variables,String[] groupVariables,
+			ClauseNode whereCondition,ClauseNode havingCondintion){
+		
+		String[][] result;
+		
+		ArrayList<Record> res=new ArrayList<>();
+		ArrayList<Record[]> list=new ArrayList<>();
+		Table table=tables.get(tableName);
+		list=table.groupBy(groupVariables);
+		
+		String[][] variablesValue=new String[list.size()][list.get(0).length];
+		Record[] array;
+		String[] variablesName=table.columns;
+		HashMap<String, Integer> names=new HashMap<>();
+		for(int i=0;i<variablesName.length;i++){
+			names.put(variablesName[i], i);
+		}
+		
+		for(int i=0;i<list.size();i++){
+			array=list.get(i);
+			for(int j=0;j<array.length;j++){
+				variablesValue[j]=array[j].getValues(variablesName);
+			}
+			
+			boolean whereBool=false;
+			boolean havingBool=false;
+			try {
+				whereBool=whereCondition.checkCondition(names, variablesValue[0]);
+				if(havingCondintion==null){
+					System.out.println("salamdera");
+					havingBool=true;
+				}
+				else{
+					System.out.println("chera");
+					try{
+						havingBool=havingCondintion.checkAggregationCondition(variablesValue, variablesName);
+					}
+					catch(Exception e){
+						havingBool=false;
+					}
+					
+					System.out.println("having bool: "+havingBool);
+				}
+			} catch (NoVariable e) {
+
+			} catch (Exception e) {
+
+			}
+			
+			if(whereBool==true&&havingBool==true){
+				res.add(array[0]);
+			}
+		}
+		
+		result=new String[res.size()][variables.length];
+		
+		Record temp;
+		for(int i=0;i<res.size();i++){
+			temp=res.get(i);
+			for(int j=0;j<variables.length;j++){
+				result[i][j]=temp.getValue(variables[j]);
+			}
+		}
+			
+		
+		
+		return result;
+		
+	}
 	
 	
 	
@@ -243,6 +298,10 @@ public class TableManager {
 	
 	
 	
+	
+	
+	
+	
 	public static Record[] getRecords(String tableName,ClauseNode condition){
 		Table table=tables.get(tableName);
 		Record[] result=table.getRecords(condition);
@@ -268,16 +327,6 @@ public class TableManager {
 	
 	
 	
-//	public static void addRecord(String tableName,String[] variables) throws InvalidParam{
-//		
-//		Table table=tables.get(tableName);
-//		try {
-//			table.addRecord(variables);
-//		} catch (InvalidRecord e) {
-//			throw new InvalidParam();
-//		}
-//		
-//	}
 	
 	
 	
@@ -299,12 +348,6 @@ public class TableManager {
 	
 	
 	
-//	public static void removeRecords(String tableName,ClauseNode condition){
-//		
-//		Table table=tables.get(tableName);
-//		table.removeRecords(condition);
-//		
-//	}
 	
 	
 	
@@ -313,9 +356,28 @@ public class TableManager {
 		Table table=tables.get(tableName);
 		try {
 			table.removeRecords(condition);
-		} catch (InvalidRecord e) {
+		} catch (FKConstrain e) {
 			e.printStackTrace();
 		}
+		
+	}
+	
+	
+	
+	
+	
+	public static void createView(String viewName,String[] selectedVariables,String command) 
+			throws InvalidParam{
+		
+		View view=new View(viewName, selectedVariables, command);
+		
+		if(tables.containsKey(viewName)==false){
+			tables.put(viewName, view);
+		}
+		else{
+			throw new InvalidParam();
+		}
+		
 		
 	}
 	
@@ -327,3 +389,15 @@ public class TableManager {
 	
 	
 }
+
+
+
+
+
+
+
+
+
+
+
+

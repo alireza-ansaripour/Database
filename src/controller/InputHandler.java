@@ -618,6 +618,136 @@ public class InputHandler {
 	
 	
 	
+	
+	
+	/**
+	 * gets a string as condition then convert it to postfix and calculates equivalent ClauseNode and 
+	 * returns it.
+	 * @param condition a string that come after HAVING. include AND, OR, NOT, MAX(I), MIN(I),AVE(I),SUM(I). 
+	 * @return a ClauseNode that checks HAVING condition.
+	 */
+	public static ClauseNode createHavingClauseNode(String condition){
+		
+		
+		String postfix=havingConditionToPostfix(condition);
+		String copy=postfix;
+		
+		
+		String[] functions={"MAX","MIN","AVE","SUM"};
+		String[] operators={"^","@","!"};
+		
+		Stack<ClauseNode> stack=new Stack<>();
+		
+		int secondIndex=0;
+		boolean firstFunction=false;
+		for(int i=0;i<functions.length;i++){
+			if(copy.startsWith(functions[i])==true){
+				firstFunction=true;
+			}
+		}
+		
+		
+		
+		int temp=0;
+		
+		for(;;){
+			
+			for(int i=0;i<functions.length;i++){
+				temp=copy.indexOf(functions[i],1);
+				if(temp!=-1&&secondIndex>temp){
+					secondIndex=temp;
+					firstFunction=true;
+				}
+			}
+			
+			for(int i=0;i<operators.length;i++){
+				temp=copy.indexOf(operators[i], 1);
+				if(temp!=-1&&secondIndex>temp){
+					secondIndex=temp;
+					firstFunction=false;
+				}
+			}
+			
+			if(secondIndex==0){
+				secondIndex=copy.length();
+				ClauseNode node=new ClauseNode(copy,true);
+				stack.push(node);
+				break;
+			}
+			
+			if(firstFunction==true){
+				
+				String clauseString=copy.substring(0, secondIndex);
+				ClauseNode clauseNode=new ClauseNode(clauseString, true);
+				stack.push(clauseNode);
+				copy=copy.substring(secondIndex, copy.length());
+			}
+			else{
+				ClauseNode clauseNode;
+				if(copy.charAt(0)=='!'){
+					clauseNode=stack.pop();
+					clauseNode.inverseSign();
+				}
+				else{
+					int operator=0;
+					if(copy.charAt(0)=='^'){
+						operator=0;
+					}
+					//@
+					else{
+						operator=1;
+					}
+					
+					clauseNode=new ClauseNode(operator);
+					
+					ClauseNode first=stack.pop();
+					ClauseNode second=stack.pop();
+					
+					clauseNode.addChild(first, second);
+					stack.push(clauseNode);
+					copy=copy.substring(1,copy.length());
+				}
+			}
+		}
+		
+		ClauseNode result=stack.pop();
+		return result;
+	}
+	
+	
+	
+	
+	/**
+	 * gets a string as condition then first replace operators in this way: AND:^, OR:@, NOT:!.
+	 * then returns postfix of it.
+	 * @param condition a string come after HAVING.
+	 * @return postfix of condition.
+	 */
+	private static String havingConditionToPostfix(String condition){
+		
+		String copy=condition;
+		copy=copy.replace("(", " ( ");
+		copy=copy.replace(")", " ) ");
+		
+		copy=copy.replace("AND", " ^ ");
+		copy=copy.replace("OR", " @ ");
+		copy=copy.replace("NOT", " 0 ! ");
+		
+		InToPost post=new InToPost(copy);
+		copy=post.doTrans();
+		
+		copy=copy.replace(" 0 ", " ");
+		
+		String[] functions={"MAX","MIN","AVE","SUM"};
+		
+		return copy;
+		
+	}
+	
+	
+	
+	
+	
 	public static void print(String[][] array,String string){
 		for(int i=0;i<array.length;i++){
 			System.out.print(string+" ");

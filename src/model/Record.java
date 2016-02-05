@@ -61,14 +61,6 @@ public class Record {
     	}
     	
     	return result;
-    	
-//    	ArrayList<String> list=new ArrayList<>();
-//    	for(String value: values.values()){
-//    		list.add(value);
-//    	}
-//    	String[] result=new String[list.size()];
-//    	return list.toArray(result);
-    	
     }
     
     
